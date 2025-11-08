@@ -1,0 +1,122 @@
+# Build results
+frontend/BlazorApp/obj/
+shared/Shared/obj/
+*.log
+*.tlog
+
+# User-specific files
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+.history/
+*.code-workspace
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+packages/
+*.nuspec
+*.ncrunchsolution
+*.ncrunchproject
+
+# Build artifacts and cache
+*.dll
+*.exe
+*.pdb
+*.cache
+*.dbmdl
+*.bak
+*.bak2
+*.backup
+*.tmp
+*.temp
+*.vspscc
+*.vssscc
+
+# Coverage and test results
+TestResult.xml
+TestResults/
+*.coverage
+*.coveragexml
+*.profiler
+*.gcov
+*.gcda
+*.gcno
+*.dotCover
+coverage-report/
+
+# Publish outputs
+publish/
+dist/
+artifacts/
+wwwroot/
+frontend/dist/
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/.next/
+
+# Docker
+docker-compose.override.yml
+.docker/
+*.env.local
+.env.*
+
+# OS-specific junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+
+# Tooling / Build cache
+.vs/
+ReSharper/
+stylecop.cache
+project.lock.json
+project.fragment.lock.json
+
+# .NET Core specific
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.db
+*.mdf
+*.ldf
+*.ndf
+
+# Local configuration files
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+
+# Node and frontend
+node_modules/
+npm-debug.log
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Misc
+*.sw?
+*.bak?
+*.old
