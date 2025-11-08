@@ -10,46 +10,19 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
     depends_on:
-      - authservice
-      - teamservice
-      - jiraconnector
-      - calendarconnector
+      - server
 
-  authservice:
+  server:
     build:
-      context: ./services/AuthService
+      context: ./server
       dockerfile: Dockerfile
     ports:
-      - "5001:8080"
+      - "5001:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-
-  teamservice:
-    build:
-      context: ./services/TeamService
-      dockerfile: Dockerfile
-    ports:
-      - "5002:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-
-  jiraconnector:
-    build:
-      context: ./services/JiraConnector
-      dockerfile: Dockerfile
-    ports:
-      - "5003:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-
-  calendarconnector:
-    build:
-      context: ./services/CalendarConnector
-      dockerfile: Dockerfile
-    ports:
-      - "5004:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=teamhub;Username=teamhub;Password=password123
+    depends_on:
+      - db
 
   db:
     image: postgres:16

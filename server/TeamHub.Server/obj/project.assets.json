@@ -487,11 +487,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/mnt/c/Users/josep/Documents/GitHub/teamhub/services/TeamService/TeamService.csproj",
-      "projectName": "TeamService",
-      "projectPath": "/mnt/c/Users/josep/Documents/GitHub/teamhub/services/TeamService/TeamService.csproj",
+      "projectUniqueName": "/mnt/c/Users/josep/Documents/GitHub/teamhub/server/TeamHub.Server/TeamHub.Server.csproj",
+      "projectName": "TeamHub.Server",
+      "projectPath": "/mnt/c/Users/josep/Documents/GitHub/teamhub/server/TeamHub.Server/TeamHub.Server.csproj",
       "packagesPath": "/home/joseph/.nuget/packages/",
-      "outputPath": "/mnt/c/Users/josep/Documents/GitHub/teamhub/services/TeamService/obj/",
+      "outputPath": "/mnt/c/Users/josep/Documents/GitHub/teamhub/server/TeamHub.Server/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/joseph/.nuget/NuGet/NuGet.Config"

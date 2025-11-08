@@ -1,6 +1,0 @@
-@CalendarConnector_HostAddress = http://localhost:5030
-
-GET {{CalendarConnector_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

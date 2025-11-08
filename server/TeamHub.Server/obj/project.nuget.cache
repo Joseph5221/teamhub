@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Hn35srTjqv77QqEpoDgfQIkgmu3z4Au265qpwbk8d0fPCnRwD+SwkErqnxuqDSyfz2Ez6/ruDkRm/a87HZQJHA==",
+  "dgSpecHash": "qWS0U1Dluw/2k+2iW2zWU5tVc/ztB1AszR8AmT5FY5OcDNdvVDbZAgMjaBIPwG7RkcckAx0M5v5bw1e2UP46GA==",
   "success": true,
-  "projectFilePath": "/mnt/c/Users/josep/Documents/GitHub/teamhub/services/AuthService/AuthService.csproj",
+  "projectFilePath": "/mnt/c/Users/josep/Documents/GitHub/teamhub/server/TeamHub.Server/TeamHub.Server.csproj",
   "expectedPackageFiles": [
     "/home/joseph/.nuget/packages/microsoft.aspnetcore.openapi/8.0.21/microsoft.aspnetcore.openapi.8.0.21.nupkg.sha512",
     "/home/joseph/.nuget/packages/microsoft.extensions.apidescription.server/6.0.5/microsoft.extensions.apidescription.server.6.0.5.nupkg.sha512",
