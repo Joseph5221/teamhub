@@ -1,6 +1,7 @@
 # Build results
-frontend/BlazorApp/obj/
-shared/Shared/obj/
+/frontend/BlazorApp/obj/
+/frontend/BlazorApp/bin/
+/shared/Shared/obj/
 *.log
 *.tlog
 
