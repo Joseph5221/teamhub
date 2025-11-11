@@ -2,6 +2,9 @@
 /frontend/BlazorApp/obj/
 /frontend/BlazorApp/bin/
 /shared/Shared/obj/
+/shared/Shared/bin/
+/server/TeamHub.Server/obj/
+/server/TeamHub.Server/bin/
 *.log
 *.tlog
 

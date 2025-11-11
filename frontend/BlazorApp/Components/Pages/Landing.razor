@@ -1,0 +1,47 @@
+@page "/"
+
+<PageTitle>TeamHub | Unified Team Dashboard</PageTitle>
+
+<div class="container mt-5 text-center">
+    <h1 class="display-4 fw-bold">Welcome to TeamHub 👋</h1>
+    <p class="lead text-muted mb-4">
+        Your modular dashboard for engineering, management, and DevOps visibility.
+    </p>
+
+    <div class="d-flex justify-content-center gap-3 mb-5">
+        <button class="btn btn-primary btn-lg" @onclick="NavigateToDemo">Try the Demo</button>
+        <button class="btn btn-outline-secondary btn-lg" @onclick="NavigateToLogin">Sign In</button>
+    </div>
+
+    <h3 class="fw-semibold mb-4">Integrate your team's tools</h3>
+
+    <div class="row justify-content-center">
+        <div class="col-md-2 m-2 p-3 border rounded shadow-sm">
+            <img src="icons/github.svg" alt="GitHub" class="mb-2" style="height:40px;">
+            <p>Track pull requests & commits</p>
+        </div>
+        <div class="col-md-2 m-2 p-3 border rounded shadow-sm">
+            <img src="icons/jira.svg" alt="Jira" class="mb-2" style="height:40px;">
+            <p>Visualize sprint progress</p>
+        </div>
+        <div class="col-md-2 m-2 p-3 border rounded shadow-sm">
+            <img src="icons/calendar.svg" alt="Calendar" class="mb-2" style="height:40px;">
+            <p>Sync upcoming meetings</p>
+        </div>
+        <div class="col-md-2 m-2 p-3 border rounded shadow-sm">
+            <img src="icons/cloud.svg" alt="InfraWatch" class="mb-2" style="height:40px;">
+            <p>Monitor infrastructure health</p>
+        </div>
+    </div>
+
+    <footer class="mt-5 text-muted small">
+        <p>© @DateTime.Now.Year TeamHub • Built with Blazor and .NET 8</p>
+    </footer>
+</div>
+
+@code {
+    [Inject] NavigationManager Nav { get; set; } = default!;
+
+    void NavigateToDemo() => Nav.NavigateTo("/dashboard");
+    void NavigateToLogin() => Nav.NavigateTo("/login");
+}
