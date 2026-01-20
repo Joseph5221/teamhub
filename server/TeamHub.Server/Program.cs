@@ -1,7 +1,13 @@
+using TeamHub.Server.Extensions;
+using TeamHub.Server.Features.Auth;
+using TeamHub.Server.Features.Dashboard;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddFeatures();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -15,6 +21,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+
+// Map feature endpoints
+app.MapAuthEndpoints();
+app.MapDashboardEndpoints();
+// app.MapTeamEndpoints();
+// app.MapProjectEndpoints();
+// app.MapIntegrationEndpoints();
+// app.MapUserEndpoints();
 
 var summaries = new[]
 {
