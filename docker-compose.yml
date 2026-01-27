@@ -1,40 +1,49 @@
-version: "3.9"
+version: '3.9'
 
 services:
-  frontend:
+  api:
     build:
-      context: ./frontend
+      context: ./TeamHub.Server
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "5001:8080"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-    depends_on:
-      - server
-
-  server:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-    ports:
-      - "5001:5000"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=teamhub;Username=teamhub;Password=password123
+      - Jwt__Secret=${JWT_SECRET}
+      - Jwt__Issuer=TeamHub-Dev
+      - Jwt__Audience=TeamHub-Dev
     depends_on:
       - db
+    volumes:
+      - ./TeamHub.Server:/app
+    command: dotnet watch run --no-launch-profile
 
-  db:
-    image: postgres:16
-    restart: unless-stopped
+  # Frontend Service
+  frontend:
+    build:
+      context: ./teamhub-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
     environment:
-      POSTGRES_USER: teamhub
-      POSTGRES_PASSWORD: password123
-      POSTGRES_DB: teamhub
+      - VITE_API_URL=http://localhost:5001
+    volumes:
+      - ./teamhub-frontend:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Database Service
+  db:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=teamhub
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=teamhub_dev
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
 
 volumes:
-  pgdata:
+  postgres_data:

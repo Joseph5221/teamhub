@@ -5,6 +5,10 @@
 /shared/Shared/bin/
 /server/TeamHub.Server/obj/
 /server/TeamHub.Server/bin/
+/server/TeamHub.Server.Tests/obj/
+/server/TeamHub.Server.Tests/bin/
+/server/TeamHub.Server.IntegrationTests/obj/
+/server/TeamHub.Server.IntegrationTests/bin/
 *.log
 *.tlog
 
