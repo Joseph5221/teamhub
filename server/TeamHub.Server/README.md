@@ -19,23 +19,46 @@ Features/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- .NET 8 SDK
+- .NET 8 SDK **and** a .NET 8 runtime — check with `dotnet --list-runtimes`
+  for a `Microsoft.AspNetCore.App 8.x` line. If it's missing, see
+  [ADR 0003](../../docs/adr/0003-target-net8-and-install-the-runtime.md);
+  `dotnet build` can succeed on a newer SDK alone but `dotnet run`/`dotnet
+  test` need the matching runtime.
 - Your favorite IDE (Visual Studio, VS Code, or Rider)
 
 ### Setup Steps
 
-1. **Restore packages**
+The fastest path is the repo-root setup script, which checks your runtime
+and sets dev JWT secrets for you:
+
+```bash
+./scripts/setup-dev.sh
+```
+
+Or by hand:
+
+1. **JWT secrets** (the app throws at startup without these — see
+   [Configuration](#-configuration)):
+   ```bash
+   dotnet user-secrets init
+   dotnet user-secrets set "Jwt:Secret" "<a long random dev value>"
+   dotnet user-secrets set "Jwt:Issuer" "TeamHub-Dev"
+   dotnet user-secrets set "Jwt:Audience" "TeamHub-Dev"
+   ```
+
+2. **Restore packages**
    ```bash
    dotnet restore
    ```
 
-2. **Run the application**
+3. **Run the application**
    ```bash
    dotnet run
    ```
 
-3. **Access Swagger UI**
-   - Navigate to: `https://localhost:5001` (or the port shown in console)
+4. **Access Swagger UI**
+   - Navigate to: `https://localhost:7073` (http fallback `http://localhost:5069`
+     — see `Properties/launchSettings.json` if these ever change)
    - Swagger UI will open automatically in development mode
 
 ## 🔐 Authentication
@@ -44,9 +67,15 @@ The API uses JWT (JSON Web Tokens) for authentication.
 
 ### Quick Start (Development)
 
-**Test User (Pre-seeded)**
-- Email: `test@teamhub.com`
-- Password: Any password (validation disabled for development)
+**Test Users (Pre-seeded)** — any password works (validation disabled for development):
+- `test@teamhub.com` (Admin, owns the "Platform" team)
+- `bob@teamhub.com` (member of both seeded teams)
+- `carol@teamhub.com` (owns the "Growth" team)
+
+Seeded automatically on startup (`DbInitializer.SeedAsync`, called from
+`Program.cs`, Development only) with 2 teams, 3 projects, and 4 integrations
+spread across them. Reset to a clean slate without restarting the process:
+`./scripts/seed-db.sh` (or `POST /api/dev/reseed` directly).
 
 ### API Flow
 
@@ -98,19 +127,16 @@ The API uses JWT (JSON Web Tokens) for authentication.
 
 ## 🗄️ Database
 
-Currently using **In-Memory Database** for development:
+Using EF Core's **in-memory provider**, deliberately, for now — see
+[ADR 0002](../../docs/adr/0002-in-memory-database-for-now.md):
 - No setup required
-- Data resets on restart
-- Pre-seeded with test user and sample integrations
-
-### Switch to SQLite (Optional)
-
-1. In `ServiceCollectionExtensions.cs`, uncomment SQLite configuration
-2. Run migrations:
-   ```bash
-   dotnet ef migrations add InitialCreate
-   dotnet ef database update
-   ```
+- Data resets on restart, and reseeds automatically (Development only)
+- Pre-seeded with 3 users, 2 teams, 3 projects, 4 integrations — see
+  `Infrastructure/Data/DbInitializer.cs`; reset it on demand with
+  `./scripts/seed-db.sh` without restarting the process
+- No migrations exist yet; `scripts/reset-db.sh` explains why there's
+  nothing to migrate today (that's separate from seeding — it's about
+  schema, not test data)
 
 ## 📝 API Endpoints
 
@@ -121,8 +147,10 @@ Currently using **In-Memory Database** for development:
 ### Dashboard
 - `GET /api/dashboard` - Get user dashboard (requires auth)
 
-### Health
-- `GET /health` - Health check endpoint
+### Dev-only (Development environment only, not authenticated)
+- `POST /api/dev/reseed` - Clear and reseed the in-memory database with test data
+
+(No `/health` endpoint exists yet — it's not wired up in `Program.cs`.)
 
 ## 🧪 Testing with Swagger
 

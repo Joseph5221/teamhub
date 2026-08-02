@@ -1,9 +1,13 @@
 version: '3.9'
 
+# Database is intentionally not included here: TeamHub.Server uses EF Core's
+# in-memory provider for now (see docs/adr/0002-in-memory-database-for-now.md).
+# Add a `db` service back when the app actually points at Postgres.
+
 services:
   api:
     build:
-      context: ./TeamHub.Server
+      context: ./server/TeamHub.Server
       dockerfile: Dockerfile
     ports:
       - "5001:8080"
@@ -12,38 +16,12 @@ services:
       - Jwt__Secret=${JWT_SECRET}
       - Jwt__Issuer=TeamHub-Dev
       - Jwt__Audience=TeamHub-Dev
-    depends_on:
-      - db
-    volumes:
-      - ./TeamHub.Server:/app
-    command: dotnet watch run --no-launch-profile
 
-  # Frontend Service
   frontend:
     build:
-      context: ./teamhub-frontend
+      context: ./frontend/BlazorApp
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
-    environment:
-      - VITE_API_URL=http://localhost:5001
-    volumes:
-      - ./teamhub-frontend:/app
-      - /app/node_modules
-    command: npm run dev
-
-  # Database Service
-  db:
-    image: postgres:16-alpine
-    restart: always
-    environment:
-      - POSTGRES_USER=teamhub
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_DB=teamhub_dev
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
+      - "5000:5000"
+    depends_on:
+      - api

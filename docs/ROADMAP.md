@@ -1,81 +1,105 @@
 # TeamHub — Status & Roadmap
 
-Last reviewed: 2026-08-01 (updated same day after catching a missed `git
-pull` — see revision note at the bottom). Update the "Current Status" section
-whenever you pick this project back up or wrap a session — it's meant to
-answer "where did I leave off?" in under a minute.
+Last reviewed: 2026-08-01. Update the "Current Status" section whenever you
+pick this project back up or wrap a session — it's meant to answer "where
+did I leave off?" in under a minute.
 
 ## Current Status
 
-Two commits landed since the file-structure scaffold
-(`2d2bc51` "Create functionality for error/result/dashboard/auth/JWT" and
-`fa4bee7` "Setting up testing framework") that hadn't been reviewed here yet.
-Net effect: real progress on Auth/Dashboard, but the environment needs some
-reconciling before you can actually run or test anything.
+The environment is now reconciled and the Auth/Dashboard flow has actually
+been verified end-to-end for the first time (not just built).
 
-- ✅ `dotnet build teamhub.sln` succeeds — 0 errors (it didn't as of the
-  previous review; entities/EF Core/JWT packages are now in place).
-- ✅ **Auth works end-to-end** (dev-mode only): `POST /api/auth/login` and
-  `/register` issue JWTs. Login currently accepts **any password** and
-  registration stores passwords **unhashed** — both explicitly `TODO` in
-  `AuthService.cs`, not accidental, but not safe past local dev.
+- ✅ `dotnet build teamhub.sln` succeeds — 0 errors.
+- ✅ **This machine now has a .NET 8 runtime** (installed via
+  `brew install dotnet@8`, per
+  [ADR 0003](adr/0003-target-net8-and-install-the-runtime.md)) —
+  `dotnet run`/`dotnet test` work via `scripts/setup-dev.sh` /
+  `DOTNET=<path> scripts/start-dev.sh`; see that ADR for the Homebrew
+  keg-only quirk that setup script papers over.
+- ✅ **Auth verified working end-to-end for real** (dev-mode only):
+  `POST /api/auth/login` and `/register` issue JWTs, confirmed by actually
+  running the server and curling `register` → `login` → `GET /api/dashboard`
+  with the returned token. Login still accepts **any password** and
+  registration still stores passwords **unhashed** — both explicitly `TODO`
+  in `AuthService.cs`, not accidental, but not safe past local dev.
+- ✅ **Found and fixed a real bug while verifying this**:
+  `Infrastructure/Data/Configurations/*.cs` were empty stubs, so EF Core
+  couldn't resolve the `Team.Owner`/`Team.Members`/`User.Teams`
+  relationships and threw `InvalidOperationException` on the first
+  `register`/`login` call. This had never been caught before because
+  `dotnet run` had never successfully executed on a dev machine until the
+  runtime gap above was closed. Now fixed with minimal Fluent API config —
+  see [ADR 0002](adr/0002-in-memory-database-for-now.md).
 - ✅ **Dashboard works**: `GET /api/dashboard` (JWT-protected) returns user
   info, per-integration status, and team/project/integration counts.
 - ✅ Blazor frontend still builds and runs, has a real landing page — but
   isn't wired up to call the new `/api/auth` or `/api/dashboard` endpoints yet.
-- ❌ **The app won't start without a JWT secret.** `appsettings*.json` ship
-  blank `Jwt:Secret`/`Issuer`/`Audience` on purpose (don't commit real
-  secrets) — `AddInfrastructure` throws at startup until you set them via
-  `dotnet user-secrets` or env vars.
-- ❌ **This machine has no .NET 8 runtime** (`10.0.101` SDK / `10.0.1`
-  runtime only) — `dotnet run` fails with a framework-mismatch error even
-  though `dotnet build` succeeds. Check `dotnet --list-runtimes` on your
-  actual dev machine; this may not apply there.
-- ❌ **Database is in-memory**, not Postgres — resets on every restart, no
-  migrations, despite `docker-compose.yml` running a Postgres `db` service.
-- ✅ **Both test projects now compile and are wired into `teamhub.sln`** —
-  added the missing `<ProjectReference>` to `TeamHub.Server`, added
-  `Microsoft.AspNetCore.Mvc.Testing`/`FluentAssertions` to
-  `TeamHub.Server.IntegrationTests.csproj`, fixed missing `using`
-  directives, and exposed `Program` via `public partial class Program { }`
-  for `WebApplicationFactory<Program>`. `dotnet build teamhub.sln` is 0
-  errors across all 5 projects. `dotnet test` still can't *run* them on
-  this machine — same .NET 8 runtime gap as `dotnet run` (see below), not a
-  compile issue.
-- ❌ **`docker-compose.yml` and `scripts/*.sh` reference paths that don't
-  exist in this repo** (`./TeamHub.Server`, `./teamhub-frontend` as a
-  Node/Vite project) — looks like boilerplate that was never reconciled
-  with the actual `server/TeamHub.Server` / `frontend/BlazorApp` layout.
-  `docker compose up --build` will fail.
-- ✅ **One canonical solution file**: `server/TeamHub.sln` has been deleted.
-  Root `teamhub.sln` is now the only solution and includes both test
-  projects.
+- ✅ **JWT secret setup is now scripted**: `./scripts/setup-dev.sh` sets dev
+  `user-secrets` idempotently (still required — `AddInfrastructure` throws
+  at startup without them, intentionally, since real secrets aren't
+  committed).
+- ✅ **Database is formally in-memory now, not a documentation gap** — see
+  [ADR 0002](adr/0002-in-memory-database-for-now.md). `docker-compose.yml`
+  no longer runs a Postgres `db` service.
+- ✅ **Both test projects compile, are wired into `teamhub.sln`, and now
+  actually run and pass** (`TeamHub.Server.Tests`: 2 tests;
+  `TeamHub.Server.IntegrationTests`: 1 test) via `scripts/run-tests.sh` /
+  the .NET 8 runtime from ADR 0003.
+- ✅ **One canonical solution file**: `teamhub.sln` at the repo root,
+  covering frontend + backend + shared + both test projects.
+- ✅ **`docker-compose.yml` and `scripts/*.sh` now match the real repo
+  layout** (`server/TeamHub.Server`, `frontend/BlazorApp`) — the speculative
+  `teamhub-frontend` Node/Vite service is gone (Blazor Server was always the
+  real frontend). Added the missing server `Dockerfile` (mirrors
+  `frontend/BlazorApp/Dockerfile`) and a root `.env.example` for
+  `JWT_SECRET`. Not smoke-tested against a real `docker compose up --build`
+  in this session (no Docker daemon available) — do that before trusting it
+  fully.
+- ✅ **Dead code removed**: the leftover `/weatherforecast` endpoint in
+  `Program.cs`, and `WebApplicationExtensions` (`InitializeDatabaseAsync`/
+  `UseApiMiddleware`, unused duplicates of what `Program.cs` already did
+  inline). `ServiceCollectionExtensions.AddApiDocumentation` (previously
+  unused, more complete than the inline Swagger setup — it adds the JWT
+  bearer scheme to Swagger UI) is now the one wired up in `Program.cs`.
+- ✅ **Dev database now seeds itself with realistic test data**:
+  `Infrastructure/Data/DbInitializer.cs` (previously an empty stub) creates
+  3 users, 2 teams (with owner + members), 3 projects, and 4 integrations
+  at startup (Development only, idempotent). `POST /api/dev/reseed` (dev-only,
+  unauthenticated) resets and reseeds without restarting the process;
+  `./scripts/seed-db.sh` wraps it. The old `AppDbContext` `HasData` seed
+  (one user, no relationships) is gone — `HasData` can't express `Team.Owner`/
+  `Team.Members` cleanly, so seeding moved to runtime.
 - ❌ `Teams`, `Projects`, `Integrations`, `Users` modules are still empty
-  stubs — unchanged since the last review.
+  stubs.
+- ❌ Auth is still dev-only (any password, unhashed storage) — next real
+  priority, see below.
 
 Full detail on every item above: [ARCHITECTURE.md § Reality check](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan).
 
+## Local setup (streamlined)
+
+```bash
+./scripts/setup-dev.sh   # checks .NET runtime, sets dev JWT secrets, builds
+./scripts/start-dev.sh   # runs API + Blazor frontend together (auto-seeds test data)
+./scripts/run-tests.sh   # dotnet test teamhub.sln
+./scripts/seed-db.sh     # resets the running API's test data on demand
+```
+
+All three accept a `DOTNET=/path/to/dotnet` override if your default
+`dotnet` can't run `net8.0` apps — see
+[ADR 0003](adr/0003-target-net8-and-install-the-runtime.md).
+
 ## Immediate Next Steps (in order)
 
-Re-sequenced from the previous version of this doc now that Auth/Dashboard
-exist — the priority now is making what's already written actually runnable
-and testable, *then* resuming feature work. Don't start Teams/Projects/
-Integrations until the app runs and the test suite compiles.
+The environment is now runnable and testable — the priority shifts to
+making Auth trustworthy, then resuming feature work.
 
-1. **Reconcile the local environment.**
-   - Set a JWT secret: `cd server/TeamHub.Server && dotnet user-secrets init && dotnet user-secrets set "Jwt:Secret" "<a long random dev value>"` (and `Jwt:Issuer`/`Jwt:Audience`, e.g. `TeamHub-Dev` for both).
-   - Check `dotnet --list-runtimes` — if there's no 8.x entry, either install the .NET 8 runtime or deliberately retarget the projects to `net10.0` (write down which you chose and why).
-   - Confirm `dotnet run --project server/TeamHub.Server` starts and Swagger loads, then hit `/api/auth/register` → `/api/auth/login` → `/api/dashboard` with the returned token to confirm the flow actually works.
-2. ~~Fix the two test projects~~ — done: both compile and are referenced from root `teamhub.sln`. `dotnet test` still can't *run* them until the .NET 8 runtime gap (step 1) is resolved on whichever machine you're on.
-3. ~~Pick one canonical solution file~~ — done: `server/TeamHub.sln` deleted, root `teamhub.sln` is now the only solution and includes both test projects.
-4. **Reconcile `docker-compose.yml` and `scripts/*.sh` with the real repo layout** — fix the build context paths (`server/TeamHub.Server`, `frontend/BlazorApp`) and either drop the `teamhub-frontend`/Vite service (if that was speculative/generated boilerplate) or, if a frontend rewrite to something other than Blazor is genuinely being considered, write that decision down as an ADR instead of leaving it as an inconsistency. Add a `.env.example` covering `JWT_SECRET` and `DB_PASSWORD`. Add the still-missing server `Dockerfile` (mirror `frontend/BlazorApp/Dockerfile`).
-5. **Decide on the database** — either commit to in-memory for now (fine for early dev, but say so explicitly and remove the Postgres `db` service from compose until it's needed) or wire up the commented-out Sqlite/Postgres path in `AddInfrastructure` plus real EF Core migrations. Don't leave the docs and the code implying different databases.
-6. **Add password hashing** (`IPasswordHasher`/`PasswordHasher` are already stubbed out) before building anything else on top of Auth — right now any password logs any user in.
-7. **Remove dead/duplicate code**: the leftover `/weatherforecast` endpoint in `Program.cs`, and the unused `WebApplicationExtensions.InitializeDatabaseAsync`/`UseApiMiddleware` methods that duplicate what `Program.cs` already does inline — pick one place for startup/middleware config.
-8. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`.
-9. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest.
-10. **Revisit the `/Modules` vs. flat-folder question** (see [ARCHITECTURE.md](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan)) deliberately, and write an ADR for whichever way you go.
-11. **Decide the `Projects` vs. `Users` vs. `Auth` boundary** — write down what each owns before building any of them out.
+1. **Add password hashing** (`IPasswordHasher`/`PasswordHasher` are already stubbed out) before building anything else on top of Auth — right now any password logs any user in.
+2. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`, and the `Team.Members`/`Team.Owner` EF relationships are now configured and ready to use.
+3. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest.
+4. **Revisit the `/Modules` vs. flat-folder question** (see [ARCHITECTURE.md](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan)) deliberately, and write an ADR for whichever way you go.
+5. **Decide the `Projects` vs. `Users` vs. `Auth` boundary** — write down what each owns before building any of them out.
+6. **Smoke-test `docker compose up --build`** against the reconciled paths above on a machine with Docker running — this session fixed the paths and added the server `Dockerfile` but couldn't verify the full build (no Docker daemon available here).
 
 ## Not Yet — Deliberately Deferred
 
@@ -84,8 +108,3 @@ explicitly out of scope until there's a concrete reason to need them:
 Kubernetes/AKS deployment, message broker (RabbitMQ/Kafka), Redis caching,
 Prometheus/Grafana, multi-service extraction. Revisit only if a real scaling
 or ownership problem shows up.
-
-<sub>Revision note: this doc was first written against commit `1b3079f`
-before a missed `git pull` was caught; updated the same day (2026-08-01)
-against `fa4bee7` once that was resolved. See the matching note at the
-bottom of [ARCHITECTURE.md](ARCHITECTURE.md).</sub>

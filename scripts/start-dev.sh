@@ -1,30 +1,34 @@
 #!/bin/bash
+# Starts the API and Blazor frontend together for local dev.
+# Run scripts/setup-dev.sh first if you haven't (JWT secrets, runtime check).
+#
+# If your default 'dotnet' can't run net8.0 apps (see setup-dev.sh output),
+# override which dotnet executable to use for `run`:
+#   DOTNET=/path/to/dotnet8/dotnet scripts/start-dev.sh
+set -e
+
+DOTNET="${DOTNET:-dotnet}"
+
+cd "$(dirname "$0")/.."
 
 echo "Starting TeamHub Development Environment..."
 
-# Start API
 echo "Starting API..."
-cd TeamHub.Server
-dotnet run &
+(cd server/TeamHub.Server && "$DOTNET" run) &
 API_PID=$!
-cd ..
 
-# Wait for API to be ready
 echo "Waiting for API to start..."
 sleep 5
 
-# Start Frontend
 echo "Starting Frontend..."
-cd teamhub-frontend  # or your frontend directory
-npm run dev &
+(cd frontend/BlazorApp && "$DOTNET" run) &
 FRONTEND_PID=$!
-cd ..
 
 echo "TeamHub is running!"
-echo "API: https://localhost:5001"
-echo "Frontend: http://localhost:3000"
+echo "API: https://localhost:7073 (Swagger at /swagger), http fallback http://localhost:5069"
+echo "Frontend: https://localhost:7069, http fallback http://localhost:5032"
 echo ""
 echo "Press Ctrl+C to stop all services"
 
-# Wait for user to stop
+trap 'kill $API_PID $FRONTEND_PID 2>/dev/null' EXIT
 wait $API_PID $FRONTEND_PID

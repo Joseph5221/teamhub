@@ -1,17 +1,12 @@
 #!/bin/bash
-# test.sh - Run all tests
+# Runs both test projects via the root solution.
+# Override the dotnet executable if your default one can't run net8.0 (see
+# scripts/setup-dev.sh): DOTNET=/path/to/dotnet8/dotnet scripts/run-tests.sh
+set -e
+
+DOTNET="${DOTNET:-dotnet}"
+
+cd "$(dirname "$0")/.."
 
 echo "Running TeamHub Tests..."
-
-# Unit Tests
-echo "Running Unit Tests..."
-dotnet test TeamHub.Server.Tests --logger "console;verbosity=detailed"
-
-# Integration Tests
-echo "Running Integration Tests..."
-dotnet test TeamHub.Server.IntegrationTests --logger "console;verbosity=detailed"
-
-# Coverage Report
-dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
-
-echo "All tests complete!"
+"$DOTNET" test teamhub.sln --logger "console;verbosity=detailed"

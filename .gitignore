@@ -76,6 +76,7 @@ docker-compose.override.yml
 .docker/
 *.env.local
 .env.*
+!.env.example
 
 # OS-specific junk
 .DS_Store
