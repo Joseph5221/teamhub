@@ -1,3 +1,9 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using FluentAssertions;
+using TeamHub.Server.Features.Auth;
+
 public class AuthEndpointsIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;

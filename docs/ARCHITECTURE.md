@@ -164,24 +164,24 @@ Differences from the planned architecture doc:
    secret — but it means the app cannot run until you set them locally via
    `dotnet user-secrets` or environment variables). Confirmed by actually
    running `dotnet run` — it built, then... (see point 12).
-10. **Two solution files now exist and disagree.** Root `teamhub.sln`
-    includes `BlazorApp`, `Shared`, and `TeamHub.Server` (builds clean, 0
-    errors). A second `server/TeamHub.sln` (added in `fa4bee7`) includes
-    *only* `TeamHub.Server` — the two new test projects,
-    `TeamHub.Server.Tests` and `TeamHub.Server.IntegrationTests`, aren't
-    referenced by *either* `.sln`. Pick one canonical solution file (root is
-    the natural choice since it covers frontend+backend+shared) and either
-    delete `server/TeamHub.sln` or add the test projects to it.
-11. **Both new test projects fail to compile.** `TeamHub.Server.Tests.csproj`
-    and `TeamHub.Server.IntegrationTests.csproj` have no
-    `<ProjectReference>` to `TeamHub.Server.csproj`, so `AuthServiceTests.cs`
-    can't resolve `AuthService`/`AppDbContext`/`ITokenService`, and
-    `IntegrationTests.csproj` is additionally missing the
-    `Microsoft.AspNetCore.Mvc.Testing` package needed for
-    `WebApplicationFactory<Program>`. Confirmed via
-    `dotnet test TeamHub.Server.Tests` and `dotnet test
-    TeamHub.Server.IntegrationTests` from `server/` — both fail at compile,
-    not at assertion. `scripts/run-tests.sh` will currently fail outright.
+10. **Resolved: one canonical solution file.** `server/TeamHub.sln` has been
+    deleted. Root `teamhub.sln` is now the only solution and includes
+    `BlazorApp`, `Shared`, `TeamHub.Server`, `TeamHub.Server.Tests`, and
+    `TeamHub.Server.IntegrationTests` (nested under a `server` solution
+    folder, mirroring `TeamHub.Server`'s own placement). `dotnet build
+    teamhub.sln` builds all five projects with 0 errors.
+11. **Resolved: both test projects now compile.** Added the missing
+    `<ProjectReference>` to `TeamHub.Server.csproj` in both `.csproj` files,
+    added `Microsoft.AspNetCore.Mvc.Testing` and `FluentAssertions` to
+    `TeamHub.Server.IntegrationTests.csproj`, added missing `using`
+    directives in `AuthServiceTests.cs` and `AuthEndpointsIntegrationTests.cs`
+    (the namespaces existed but weren't imported), and added `public partial
+    class Program { }` to the bottom of `Program.cs` so
+    `WebApplicationFactory<Program>` can see it (top-level statement Program
+    classes are `internal` by default). `dotnet build teamhub.sln` now
+    compiles both test projects — confirmed clean. Running them
+    (`dotnet test`) still fails, but only because of item 2/pre-existing
+    issue: no matching .NET 8 runtime on this machine, same as `dotnet run`.
 12. **`docker-compose.yml` and `scripts/*.sh` were rewritten to reference a
     repo layout that doesn't exist.** The new compose file builds an `api`
     service from `./TeamHub.Server` (actual path: `server/TeamHub.Server`)

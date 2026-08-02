@@ -33,19 +33,23 @@ reconciling before you can actually run or test anything.
   actual dev machine; this may not apply there.
 - ❌ **Database is in-memory**, not Postgres — resets on every restart, no
   migrations, despite `docker-compose.yml` running a Postgres `db` service.
-- ❌ **Both new test projects fail to compile** (missing project reference
-  to `TeamHub.Server`; integration tests also missing
-  `Microsoft.AspNetCore.Mvc.Testing`) — confirmed via `dotnet test`.
-  `scripts/run-tests.sh` will fail as-is.
+- ✅ **Both test projects now compile and are wired into `teamhub.sln`** —
+  added the missing `<ProjectReference>` to `TeamHub.Server`, added
+  `Microsoft.AspNetCore.Mvc.Testing`/`FluentAssertions` to
+  `TeamHub.Server.IntegrationTests.csproj`, fixed missing `using`
+  directives, and exposed `Program` via `public partial class Program { }`
+  for `WebApplicationFactory<Program>`. `dotnet build teamhub.sln` is 0
+  errors across all 5 projects. `dotnet test` still can't *run* them on
+  this machine — same .NET 8 runtime gap as `dotnet run` (see below), not a
+  compile issue.
 - ❌ **`docker-compose.yml` and `scripts/*.sh` reference paths that don't
   exist in this repo** (`./TeamHub.Server`, `./teamhub-frontend` as a
   Node/Vite project) — looks like boilerplate that was never reconciled
   with the actual `server/TeamHub.Server` / `frontend/BlazorApp` layout.
   `docker compose up --build` will fail.
-- ❌ **Two solution files disagree**: root `teamhub.sln` (builds clean,
-  covers frontend+backend+shared) vs. `server/TeamHub.sln` (server only,
-  added with the test framework commit but doesn't include either test
-  project).
+- ✅ **One canonical solution file**: `server/TeamHub.sln` has been deleted.
+  Root `teamhub.sln` is now the only solution and includes both test
+  projects.
 - ❌ `Teams`, `Projects`, `Integrations`, `Users` modules are still empty
   stubs — unchanged since the last review.
 
@@ -62,8 +66,8 @@ Integrations until the app runs and the test suite compiles.
    - Set a JWT secret: `cd server/TeamHub.Server && dotnet user-secrets init && dotnet user-secrets set "Jwt:Secret" "<a long random dev value>"` (and `Jwt:Issuer`/`Jwt:Audience`, e.g. `TeamHub-Dev` for both).
    - Check `dotnet --list-runtimes` — if there's no 8.x entry, either install the .NET 8 runtime or deliberately retarget the projects to `net10.0` (write down which you chose and why).
    - Confirm `dotnet run --project server/TeamHub.Server` starts and Swagger loads, then hit `/api/auth/register` → `/api/auth/login` → `/api/dashboard` with the returned token to confirm the flow actually works.
-2. **Fix the two test projects** — add `<ProjectReference Include="..\TeamHub.Server\TeamHub.Server.csproj" />` to both `.csproj` files, add `Microsoft.AspNetCore.Mvc.Testing` to `TeamHub.Server.IntegrationTests.csproj`, then confirm `dotnet test` passes from `server/`. Do this before writing more tests against a broken harness.
-3. **Pick one canonical solution file.** Either delete `server/TeamHub.sln` and keep root `teamhub.sln` as the one true solution (add the two test projects to it), or the reverse — just stop having two that disagree.
+2. ~~Fix the two test projects~~ — done: both compile and are referenced from root `teamhub.sln`. `dotnet test` still can't *run* them until the .NET 8 runtime gap (step 1) is resolved on whichever machine you're on.
+3. ~~Pick one canonical solution file~~ — done: `server/TeamHub.sln` deleted, root `teamhub.sln` is now the only solution and includes both test projects.
 4. **Reconcile `docker-compose.yml` and `scripts/*.sh` with the real repo layout** — fix the build context paths (`server/TeamHub.Server`, `frontend/BlazorApp`) and either drop the `teamhub-frontend`/Vite service (if that was speculative/generated boilerplate) or, if a frontend rewrite to something other than Blazor is genuinely being considered, write that decision down as an ADR instead of leaving it as an inconsistency. Add a `.env.example` covering `JWT_SECRET` and `DB_PASSWORD`. Add the still-missing server `Dockerfile` (mirror `frontend/BlazorApp/Dockerfile`).
 5. **Decide on the database** — either commit to in-memory for now (fine for early dev, but say so explicitly and remove the Postgres `db` service from compose until it's needed) or wire up the commented-out Sqlite/Postgres path in `AddInfrastructure` plus real EF Core migrations. Don't leave the docs and the code implying different databases.
 6. **Add password hashing** (`IPasswordHasher`/`PasswordHasher` are already stubbed out) before building anything else on top of Auth — right now any password logs any user in.

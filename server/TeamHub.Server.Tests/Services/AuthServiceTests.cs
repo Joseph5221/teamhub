@@ -2,6 +2,10 @@
 using Moq;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using TeamHub.Server.Domain.Entities;
+using TeamHub.Server.Features.Auth;
+using TeamHub.Server.Infrastructure.Data;
+using TeamHub.Server.Infrastructure.Security;
 
 public class AuthServiceTests
 {

@@ -40,15 +40,18 @@ Full context lives in `docs/`:
 - **Database is in-memory** (`UseInMemoryDatabase`), not PostgreSQL, despite
   `docker-compose.yml` running a Postgres `db` service — data resets every
   restart, no migrations exist yet.
-- **Both new test projects fail to compile** — `TeamHub.Server.Tests` and
-  `TeamHub.Server.IntegrationTests` are missing a `<ProjectReference>` to
-  `TeamHub.Server.csproj` (integration tests are also missing
-  `Microsoft.AspNetCore.Mvc.Testing`). Confirmed via `dotnet test` from
-  `server/`. Fix this before adding more tests.
-- **Two solution files exist and disagree**: root `teamhub.sln` (builds
-  clean, covers everything) vs. `server/TeamHub.sln` (server only, doesn't
-  include either test project). Don't add new projects to one without
-  checking the other — see `docs/ROADMAP.md` step 3 for resolving this.
+- **Both test projects now compile and build clean from `teamhub.sln`** —
+  `TeamHub.Server.Tests` and `TeamHub.Server.IntegrationTests` had a missing
+  `<ProjectReference>` to `TeamHub.Server.csproj` (fixed), the integration
+  tests were also missing `Microsoft.AspNetCore.Mvc.Testing` and
+  `FluentAssertions` (fixed), and `Program.cs` needed `public partial class
+  Program { }` for `WebApplicationFactory<Program>` to see it (fixed).
+  `dotnet build teamhub.sln` is 0 errors across all 5 projects. `dotnet
+  test` still can't *run* on this machine — same .NET 8 runtime gap noted
+  below, not a compile issue.
+- **Only one solution file now**: `server/TeamHub.sln` has been deleted.
+  `teamhub.sln` at the repo root is canonical and includes everything —
+  `BlazorApp`, `Shared`, `TeamHub.Server`, and both test projects.
 - **`docker-compose.yml` and `scripts/*.sh` reference paths that don't exist
   in this repo** (`./TeamHub.Server`, and a `./teamhub-frontend` Node/Vite
   service — the real frontend is `frontend/BlazorApp`, Blazor Server, not
@@ -67,14 +70,13 @@ Full detail: `docs/ARCHITECTURE.md` § "Reality check" (16 numbered items) and
 - **Frontend**: Blazor Server (interactive server render mode, SignalR).
 - **Auth**: JWT bearer tokens (`Microsoft.AspNetCore.Authentication.JwtBearer`), dev-mode-only validation (see Current State).
 - **Database**: EF Core, currently `UseInMemoryDatabase` for dev. `Sqlite` and `Design` packages are referenced but unused; PostgreSQL is the eventual planned target (per `docs/ARCHITECTURE.md`) but nothing points at it yet.
-- **Testing**: xUnit + FluentAssertions + Moq (`TeamHub.Server.Tests`), xUnit + `WebApplicationFactory` (`TeamHub.Server.IntegrationTests`) — both currently broken, see above.
+- **Testing**: xUnit + FluentAssertions + Moq (`TeamHub.Server.Tests`), xUnit + `WebApplicationFactory` (`TeamHub.Server.IntegrationTests`) — both compile and build from `teamhub.sln` now; running them is blocked by the missing .NET 8 runtime, see above.
 - **Planned but not yet added**: MediatR (in-process event bus), Serilog + OpenTelemetry, Polly (resilience), real password hashing.
 
 ## Repo Layout
 
 ```
-teamhub.sln                    Root solution — BlazorApp + Shared + TeamHub.Server (builds clean)
-server/TeamHub.sln              Second, server-only solution — doesn't include the test projects (see Current State)
+teamhub.sln                    Root solution, the only one — BlazorApp + Shared + TeamHub.Server + both test projects (builds clean)
 docker-compose.yml              References paths that don't match this repo — do not trust as-is
 scripts/                        start-dev.sh / reset-db.sh / run-tests.sh — same path mismatch issue
 docs/                          Planning & architecture docs (see above)
@@ -138,7 +140,7 @@ docker compose up --build
 
 ## Working in this repo
 
-- Prefer fixing the environment/tooling issues above (test projects, docker-compose paths, duplicate solution files) and getting the existing Auth/Dashboard flow fully runnable over adding more stub modules — see `docs/ROADMAP.md` for the sequenced next steps.
+- Prefer fixing the environment/tooling issues above (docker-compose paths, the .NET 8 runtime gap) and getting the existing Auth/Dashboard flow fully runnable over adding more stub modules — see `docs/ROADMAP.md` for the sequenced next steps.
 - **Always run `git pull` (or at least `git fetch` + check `git log HEAD..origin/main`) at the start of a session before trusting any status doc**, including this file — that's exactly how this file went stale once already (see the `docs/ARCHITECTURE.md` and `docs/ROADMAP.md` revision notes).
 - When you finish or pause a work session, update `docs/ROADMAP.md`'s "Current Status" section so the next session (human or AI) knows where things stand.
 - When you make a real architectural decision (not just an implementation detail), write it up as a new file in `docs/adr/` using `docs/adr/template.md`, rather than only describing it in a commit message or chat.
