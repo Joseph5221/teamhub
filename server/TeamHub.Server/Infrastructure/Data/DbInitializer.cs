@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TeamHub.Server.Domain.Entities;
 using TeamHub.Server.Domain.Enums;
+using TeamHub.Server.Infrastructure.Security;
 
 namespace TeamHub.Server.Infrastructure.Data;
 
@@ -11,33 +12,40 @@ namespace TeamHub.Server.Infrastructure.Data;
 /// </summary>
 public static class DbInitializer
 {
-    public static async Task SeedAsync(AppDbContext context)
+    /// <summary>
+    /// Password for all seeded dev users, see server/TeamHub.Server/README.md.
+    /// </summary>
+    public const string SeedUserPassword = "password123";
+
+    public static async Task SeedAsync(AppDbContext context, IPasswordHasher passwordHasher)
     {
         if (await context.Users.AnyAsync())
         {
             return;
         }
 
+        var seededPasswordHash = passwordHasher.HashPassword(SeedUserPassword);
+
         var alice = new User
         {
             Id = Guid.Parse("11111111-1111-1111-1111-111111111111"),
             Email = "test@teamhub.com",
             Name = "Test User",
-            PasswordHash = "temporary", // any password works — see AuthService TODO
+            PasswordHash = seededPasswordHash,
             Role = "Admin"
         };
         var bob = new User
         {
             Email = "bob@teamhub.com",
             Name = "Bob Builder",
-            PasswordHash = "temporary",
+            PasswordHash = seededPasswordHash,
             Role = "User"
         };
         var carol = new User
         {
             Email = "carol@teamhub.com",
             Name = "Carol Danvers",
-            PasswordHash = "temporary",
+            PasswordHash = seededPasswordHash,
             Role = "User"
         };
         context.Users.AddRange(alice, bob, carol);

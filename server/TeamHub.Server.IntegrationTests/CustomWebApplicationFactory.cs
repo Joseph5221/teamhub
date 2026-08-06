@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TeamHub.Server.Domain.Entities;
 using TeamHub.Server.Infrastructure.Data;
+using TeamHub.Server.Infrastructure.Security;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
@@ -33,12 +34,12 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     private void SeedTestData(AppDbContext db)
     {
-        db.Users.Add(new User 
-        { 
+        db.Users.Add(new User
+        {
             Id = Guid.NewGuid(),
             Email = "test@test.com",
             Name = "Test User",
-            PasswordHash = "password"
+            PasswordHash = new PasswordHasher().HashPassword("password")
         });
         db.SaveChanges();
     }

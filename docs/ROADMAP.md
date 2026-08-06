@@ -1,6 +1,6 @@
 # TeamHub — Status & Roadmap
 
-Last reviewed: 2026-08-01. Update the "Current Status" section whenever you
+Last reviewed: 2026-08-05. Update the "Current Status" section whenever you
 pick this project back up or wrap a session — it's meant to answer "where
 did I leave off?" in under a minute.
 
@@ -19,9 +19,18 @@ been verified end-to-end for the first time (not just built).
 - ✅ **Auth verified working end-to-end for real** (dev-mode only):
   `POST /api/auth/login` and `/register` issue JWTs, confirmed by actually
   running the server and curling `register` → `login` → `GET /api/dashboard`
-  with the returned token. Login still accepts **any password** and
-  registration still stores passwords **unhashed** — both explicitly `TODO`
-  in `AuthService.cs`, not accidental, but not safe past local dev.
+  with the returned token.
+- ✅ **Password hashing implemented** (2026-08-05): `IPasswordHasher`/
+  `PasswordHasher` (`Infrastructure/Security/`) wrap
+  `Microsoft.AspNetCore.Identity.PasswordHasher<T>` (PBKDF2, no new NuGet
+  dependency — it ships in the `Microsoft.NET.Sdk.Web` shared framework).
+  `AuthService.RegisterAsync` hashes on write, `LoginAsync` verifies and
+  rejects wrong passwords (previously accepted any password). Seeded dev
+  users (`DbInitializer`) now use a real hashed password — see
+  `DbInitializer.SeedUserPassword` (`password123`) — and
+  `server/TeamHub.Server/README.md` was updated to match. Still true:
+  registration has no password strength/length validation yet — that's
+  next, not this change.
 - ✅ **Found and fixed a real bug while verifying this**:
   `Infrastructure/Data/Configurations/*.cs` were empty stubs, so EF Core
   couldn't resolve the `Team.Owner`/`Team.Members`/`User.Teams`
@@ -42,7 +51,7 @@ been verified end-to-end for the first time (not just built).
   [ADR 0002](adr/0002-in-memory-database-for-now.md). `docker-compose.yml`
   no longer runs a Postgres `db` service.
 - ✅ **Both test projects compile, are wired into `teamhub.sln`, and now
-  actually run and pass** (`TeamHub.Server.Tests`: 2 tests;
+  actually run and pass** (`TeamHub.Server.Tests`: 3 tests;
   `TeamHub.Server.IntegrationTests`: 1 test) via `scripts/run-tests.sh` /
   the .NET 8 runtime from ADR 0003.
 - ✅ **One canonical solution file**: `teamhub.sln` at the repo root,
@@ -83,8 +92,9 @@ been verified end-to-end for the first time (not just built).
   stubs) — leftover scaffolding, never referenced anywhere.
 - ❌ `Teams`, `Projects`, `Integrations`, `Users` modules are still empty
   stubs.
-- ❌ Auth is still dev-only (any password, unhashed storage) — next real
-  priority, see below.
+- ❌ Auth still has no password strength/length validation on register, no
+  refresh tokens, no email verification — password hashing itself is done
+  (see above).
 
 Full detail on every item above: [ARCHITECTURE.md § Reality check](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan).
 
@@ -106,12 +116,13 @@ All three accept a `DOTNET=/path/to/dotnet` override if your default
 The environment is now runnable and testable — the priority shifts to
 making Auth trustworthy, then resuming feature work.
 
-1. **Add password hashing** (`IPasswordHasher`/`PasswordHasher` are already stubbed out) before building anything else on top of Auth — right now any password logs any user in.
-2. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`, and the `Team.Members`/`Team.Owner` EF relationships are now configured and ready to use.
-3. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest.
-4. **Revisit the `/Modules` vs. flat-folder question** (see [ARCHITECTURE.md](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan)) deliberately, and write an ADR for whichever way you go.
-5. **Decide the `Projects` vs. `Users` vs. `Auth` boundary** — write down what each owns before building any of them out.
-6. **Smoke-test `docker compose up --build`** against the reconciled paths above on a machine with Docker running — this session fixed the paths and added the server `Dockerfile` but couldn't verify the full build (no Docker daemon available here).
+1. ~~Add password hashing~~ — done (2026-08-05), see Current Status above.
+2. **Add password strength/length validation on register** — natural next Auth-hardening step now that hashing is in place.
+3. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`, and the `Team.Members`/`Team.Owner` EF relationships are now configured and ready to use.
+4. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest.
+5. **Revisit the `/Modules` vs. flat-folder question** (see [ARCHITECTURE.md](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan)) deliberately, and write an ADR for whichever way you go.
+6. **Decide the `Projects` vs. `Users` vs. `Auth` boundary** — write down what each owns before building any of them out.
+7. **Smoke-test `docker compose up --build`** against the reconciled paths above on a machine with Docker running — this session fixed the paths and added the server `Dockerfile` but couldn't verify the full build (no Docker daemon available here).
 
 ## Not Yet — Deliberately Deferred
 

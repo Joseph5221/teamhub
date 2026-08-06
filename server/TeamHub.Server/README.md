@@ -67,7 +67,8 @@ The API uses JWT (JSON Web Tokens) for authentication.
 
 ### Quick Start (Development)
 
-**Test Users (Pre-seeded)** — any password works (validation disabled for development):
+**Test Users (Pre-seeded)** — password `password123` for all of them (see
+`DbInitializer.SeedUserPassword`):
 - `test@teamhub.com` (Admin, owns the "Platform" team)
 - `bob@teamhub.com` (member of both seeded teams)
 - `carol@teamhub.com` (owns the "Growth" team)
@@ -83,7 +84,7 @@ spread across them. Reset to a clean slate without restarting the process:
    ```json
    {
      "email": "test@teamhub.com",
-     "password": "anything"
+     "password": "password123"
    }
    ```
    
@@ -110,8 +111,8 @@ spread across them. Reset to a clean slate without restarting the process:
 
 ### ✅ Implemented
 - **Auth Feature**
-  - Login (simplified - any password works)
-  - Register new users
+  - Login (password verified against a PBKDF2 hash via `IPasswordHasher`)
+  - Register new users (password hashed on write)
   - JWT token generation
 
 - **Dashboard Feature**
@@ -190,8 +191,8 @@ TeamHub.Server/
 4. Create Users feature
 
 ### Phase 2: Enhance Auth
-1. Add password hashing (bcrypt/PBKDF2)
-2. Add password validation
+1. ~~Add password hashing~~ — done, see `Infrastructure/Security/PasswordHasher.cs`
+2. Add password validation (minimum length/complexity on register)
 3. Add refresh tokens
 4. Add email verification
 

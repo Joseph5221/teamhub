@@ -2,6 +2,7 @@ using TeamHub.Server.Extensions;
 using TeamHub.Server.Features.Auth;
 using TeamHub.Server.Features.Dashboard;
 using TeamHub.Server.Infrastructure.Data;
+using TeamHub.Server.Infrastructure.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,12 +25,13 @@ if (app.Environment.IsDevelopment())
     using (var seedScope = app.Services.CreateScope())
     {
         var db = seedScope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await DbInitializer.SeedAsync(db);
+        var passwordHasher = seedScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+        await DbInitializer.SeedAsync(db, passwordHasher);
     }
 
     // Dev convenience: reset + reseed without restarting the process.
     // scripts/seed-db.sh wraps this.
-    app.MapPost("/api/dev/reseed", async (AppDbContext db) =>
+    app.MapPost("/api/dev/reseed", async (AppDbContext db, IPasswordHasher passwordHasher) =>
     {
         db.Integrations.RemoveRange(db.Integrations);
         db.Projects.RemoveRange(db.Projects);
@@ -37,7 +39,7 @@ if (app.Environment.IsDevelopment())
         db.Users.RemoveRange(db.Users);
         await db.SaveChangesAsync();
 
-        await DbInitializer.SeedAsync(db);
+        await DbInitializer.SeedAsync(db, passwordHasher);
         return Results.Ok(new { message = "Database reseeded." });
     })
     .WithTags("Dev")

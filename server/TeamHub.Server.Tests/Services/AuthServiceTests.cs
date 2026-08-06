@@ -10,6 +10,7 @@ using TeamHub.Server.Infrastructure.Security;
 public class AuthServiceTests
 {
     private readonly Mock<ITokenService> _mockTokenService;
+    private readonly IPasswordHasher _passwordHasher;
     private readonly AppDbContext _context;
     private readonly AuthService _sut; // System Under Test
 
@@ -20,26 +21,27 @@ public class AuthServiceTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new AppDbContext(options);
-        
+
         // Arrange - Set up mocks
         _mockTokenService = new Mock<ITokenService>();
         _mockTokenService
             .Setup(x => x.GenerateToken(It.IsAny<User>()))
             .Returns("test-token");
-        
+        _passwordHasher = new PasswordHasher();
+
         // Arrange - Create system under test
-        _sut = new AuthService(_context, _mockTokenService.Object);
+        _sut = new AuthService(_context, _mockTokenService.Object, _passwordHasher);
     }
 
     [Fact]
     public async Task LoginAsync_WithValidCredentials_ReturnsSuccessResult()
     {
         // Arrange
-        var user = new User 
-        { 
-            Email = "test@test.com", 
+        var user = new User
+        {
+            Email = "test@test.com",
             Name = "Test User",
-            PasswordHash = "password",
+            PasswordHash = _passwordHasher.HashPassword("password"),
             IsActive = true
         };
         await _context.Users.AddAsync(user);
@@ -55,6 +57,30 @@ public class AuthServiceTests
         result.Value.Should().NotBeNull();
         result.Value!.Email.Should().Be("test@test.com");
         result.Value.Token.Should().Be("test-token");
+    }
+
+    [Fact]
+    public async Task LoginAsync_WithWrongPassword_ReturnsFailure()
+    {
+        // Arrange
+        var user = new User
+        {
+            Email = "test2@test.com",
+            Name = "Test User",
+            PasswordHash = _passwordHasher.HashPassword("password"),
+            IsActive = true
+        };
+        await _context.Users.AddAsync(user);
+        await _context.SaveChangesAsync();
+
+        var request = new LoginRequest("test2@test.com", "wrong-password");
+
+        // Act
+        var result = await _sut.LoginAsync(request);
+
+        // Assert
+        result.IsFailure.Should().BeTrue();
+        result.Error!.Code.Should().Be("Auth.InvalidCredentials");
     }
 
     [Fact]

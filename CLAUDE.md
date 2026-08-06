@@ -15,7 +15,7 @@ Full context lives in `docs/`:
 - [docs/adr/](docs/adr/) — Architecture Decision Records (why key decisions were made).
 - [docs/ROADMAP.md](docs/ROADMAP.md) — current status and next steps. **Check this first** — it's the fastest way to know what's actually done vs. stubbed.
 
-## Current State (as of 2026-08-01) — read before coding
+## Current State (as of 2026-08-05) — read before coding
 
 - **Local setup is now one command: `./scripts/setup-dev.sh`** — checks for
   a .NET 8 runtime (installs one via Homebrew if missing), sets dev JWT
@@ -27,7 +27,8 @@ Full context lives in `docs/`:
   `DOTNET=` override).
 - **The API seeds itself with test data on every startup** (Development
   only, idempotent): 3 users (`test@teamhub.com`, `bob@teamhub.com`,
-  `carol@teamhub.com`, any password), 2 teams, 3 projects, 4 integrations —
+  `carol@teamhub.com`, password `password123` for all — see
+  `DbInitializer.SeedUserPassword`), 2 teams, 3 projects, 4 integrations —
   see `Infrastructure/Data/DbInitializer.cs`. `POST /api/dev/reseed`
   (dev-only, no auth) resets it without restarting the process.
 - `frontend/BlazorApp` builds and runs. `shared/Shared` builds.
@@ -38,11 +39,13 @@ Full context lives in `docs/`:
   built. `Teams`, `Projects`, `Integrations`, `Users` are still empty stubs —
   don't assume a method has behavior just because the file exists; check
   line count / open it.
-- **Auth is dev-only, not real auth yet**: login accepts *any* password, and
-  registration stores the password unhashed. Both explicitly `TODO` in
-  `AuthService.cs` — don't build anything security-sensitive on top of this
-  until `IPasswordHasher` is implemented. This is the top item in
-  `docs/ROADMAP.md`'s next steps.
+- **Password hashing is implemented**: `AuthService.RegisterAsync` hashes on
+  write and `LoginAsync` verifies via `IPasswordHasher`/`PasswordHasher`
+  (`Infrastructure/Security/`, wraps
+  `Microsoft.AspNetCore.Identity.PasswordHasher<T>` — PBKDF2, no new NuGet
+  dependency). Login now rejects wrong passwords. Still missing:
+  password strength/length validation on register, refresh tokens, email
+  verification — see `docs/ROADMAP.md`'s next steps.
 - **The app won't start without a JWT secret** (by design — `appsettings*.json`
   ship blank `Jwt:Secret`/`Issuer`/`Audience` on purpose, don't commit real
   secrets). `scripts/setup-dev.sh` sets dev ones via `user-secrets`
