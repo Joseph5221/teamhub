@@ -82,6 +82,7 @@ public static class ServiceCollectionExtensions
         // Register infrastructure services
         services.AddScoped<ITokenService, JwtTokenService>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<IPasswordValidator, PasswordValidator>();
 
         return services;
     }

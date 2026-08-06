@@ -14,12 +14,18 @@ public class AuthService : IAuthService
     private readonly AppDbContext _context;
     private readonly ITokenService _tokenService;
     private readonly IPasswordHasher _passwordHasher;
+    private readonly IPasswordValidator _passwordValidator;
 
-    public AuthService(AppDbContext context, ITokenService tokenService, IPasswordHasher passwordHasher)
+    public AuthService(
+        AppDbContext context,
+        ITokenService tokenService,
+        IPasswordHasher passwordHasher,
+        IPasswordValidator passwordValidator)
     {
         _context = context;
         _tokenService = tokenService;
         _passwordHasher = passwordHasher;
+        _passwordValidator = passwordValidator;
     }
 
     public async Task<Result<AuthResponse>> LoginAsync(LoginRequest request)
@@ -56,6 +62,12 @@ public class AuthService : IAuthService
 
     public async Task<Result<AuthResponse>> RegisterAsync(RegisterRequest request)
     {
+        var passwordValidation = _passwordValidator.Validate(request.Password);
+        if (passwordValidation.IsFailure)
+        {
+            return Result<AuthResponse>.Failure(passwordValidation.Error!);
+        }
+
         // Check if user already exists
         var existingUser = await _context.Users
             .FirstOrDefaultAsync(u => u.Email == request.Email);

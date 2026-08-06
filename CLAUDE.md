@@ -39,12 +39,14 @@ Full context lives in `docs/`:
   built. `Teams`, `Projects`, `Integrations`, `Users` are still empty stubs —
   don't assume a method has behavior just because the file exists; check
   line count / open it.
-- **Password hashing is implemented**: `AuthService.RegisterAsync` hashes on
-  write and `LoginAsync` verifies via `IPasswordHasher`/`PasswordHasher`
-  (`Infrastructure/Security/`, wraps
+- **Password hashing and validation are both implemented**:
+  `AuthService.RegisterAsync` validates via `IPasswordValidator`/
+  `PasswordValidator` (8-128 chars, at least one letter and one digit) then
+  hashes on write; `LoginAsync` verifies via `IPasswordHasher`/
+  `PasswordHasher` (both in `Infrastructure/Security/`, the hasher wraps
   `Microsoft.AspNetCore.Identity.PasswordHasher<T>` — PBKDF2, no new NuGet
-  dependency). Login now rejects wrong passwords. Still missing:
-  password strength/length validation on register, refresh tokens, email
+  dependency). Login rejects wrong passwords; register rejects weak ones
+  with `Auth.WeakPassword`. Still missing: refresh tokens, email
   verification — see `docs/ROADMAP.md`'s next steps.
 - **The app won't start without a JWT secret** (by design — `appsettings*.json`
   ship blank `Jwt:Secret`/`Issuer`/`Audience` on purpose, don't commit real

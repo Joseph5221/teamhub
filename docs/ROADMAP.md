@@ -28,9 +28,19 @@ been verified end-to-end for the first time (not just built).
   rejects wrong passwords (previously accepted any password). Seeded dev
   users (`DbInitializer`) now use a real hashed password — see
   `DbInitializer.SeedUserPassword` (`password123`) — and
-  `server/TeamHub.Server/README.md` was updated to match. Still true:
-  registration has no password strength/length validation yet — that's
-  next, not this change.
+  `server/TeamHub.Server/README.md` was updated to match.
+- ✅ **Password validation implemented** (2026-08-06): `IPasswordValidator`/
+  `PasswordValidator` (`Infrastructure/Security/`) enforce 8-128 characters
+  plus at least one letter and one digit (no special-character requirement,
+  deliberately — see the doc comment on `PasswordValidator`, based on
+  NIST SP 800-63B guidance that length matters more than forced
+  complexity). `AuthService.RegisterAsync` validates before checking for a
+  duplicate email or hashing, returning `Auth.WeakPassword` with a combined
+  message on failure. Verified both via `dotnet test` (new
+  `RegisterAsync_WithValidPassword_ReturnsSuccessResult` /
+  `RegisterAsync_WithWeakPassword_ReturnsFailure` cases) and a live
+  `register` call against a running server with a weak and a strong
+  password.
 - ✅ **Found and fixed a real bug while verifying this**:
   `Infrastructure/Data/Configurations/*.cs` were empty stubs, so EF Core
   couldn't resolve the `Team.Owner`/`Team.Members`/`User.Teams`
@@ -51,7 +61,7 @@ been verified end-to-end for the first time (not just built).
   [ADR 0002](adr/0002-in-memory-database-for-now.md). `docker-compose.yml`
   no longer runs a Postgres `db` service.
 - ✅ **Both test projects compile, are wired into `teamhub.sln`, and now
-  actually run and pass** (`TeamHub.Server.Tests`: 3 tests;
+  actually run and pass** (`TeamHub.Server.Tests`: 7 tests;
   `TeamHub.Server.IntegrationTests`: 1 test) via `scripts/run-tests.sh` /
   the .NET 8 runtime from ADR 0003.
 - ✅ **One canonical solution file**: `teamhub.sln` at the repo root,
@@ -92,9 +102,8 @@ been verified end-to-end for the first time (not just built).
   stubs) — leftover scaffolding, never referenced anywhere.
 - ❌ `Teams`, `Projects`, `Integrations`, `Users` modules are still empty
   stubs.
-- ❌ Auth still has no password strength/length validation on register, no
-  refresh tokens, no email verification — password hashing itself is done
-  (see above).
+- ❌ Auth still has no refresh tokens, no email verification — password
+  hashing and validation are both done (see above).
 
 Full detail on every item above: [ARCHITECTURE.md § Reality check](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan).
 
@@ -117,7 +126,7 @@ The environment is now runnable and testable — the priority shifts to
 making Auth trustworthy, then resuming feature work.
 
 1. ~~Add password hashing~~ — done (2026-08-05), see Current Status above.
-2. **Add password strength/length validation on register** — natural next Auth-hardening step now that hashing is in place.
+2. ~~Add password strength/length validation on register~~ — done (2026-08-06), see Current Status above.
 3. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`, and the `Team.Members`/`Team.Owner` EF relationships are now configured and ready to use.
 4. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest.
 5. **Revisit the `/Modules` vs. flat-folder question** (see [ARCHITECTURE.md](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan)) deliberately, and write an ADR for whichever way you go.

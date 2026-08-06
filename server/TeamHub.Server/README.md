@@ -112,7 +112,7 @@ spread across them. Reset to a clean slate without restarting the process:
 ### ✅ Implemented
 - **Auth Feature**
   - Login (password verified against a PBKDF2 hash via `IPasswordHasher`)
-  - Register new users (password hashed on write)
+  - Register new users (password validated via `IPasswordValidator`, then hashed on write)
   - JWT token generation
 
 - **Dashboard Feature**
@@ -192,7 +192,7 @@ TeamHub.Server/
 
 ### Phase 2: Enhance Auth
 1. ~~Add password hashing~~ — done, see `Infrastructure/Security/PasswordHasher.cs`
-2. Add password validation (minimum length/complexity on register)
+2. ~~Add password validation~~ — done, see `Infrastructure/Security/PasswordValidator.cs` (8-128 chars, at least one letter and one digit)
 3. Add refresh tokens
 4. Add email verification
 
