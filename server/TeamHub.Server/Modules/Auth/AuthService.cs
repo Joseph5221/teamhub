@@ -4,7 +4,7 @@ using TeamHub.Server.Domain.Entities;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
 
-namespace TeamHub.Server.Features.Auth;
+namespace TeamHub.Server.Modules.Auth;
 
 /// <summary>
 /// Implementation of authentication service

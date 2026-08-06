@@ -36,9 +36,10 @@ reason appears.
   module from reaching into another module's internals unless that's
   enforced deliberately (code review discipline, internal access modifiers,
   or a lint rule — none of this is enforced automatically today).
-- **Deferred decision, not resolved**: the original plan called for a
-  `/Modules/<Domain>` folder nesting; the code as of this ADR uses flat
+- **Deferred decision, since resolved**: the original plan called for a
+  `/Modules/<Domain>` folder nesting; the code as of this ADR used flat
   top-level feature folders instead (see "Reality check" in
-  [ARCHITECTURE.md](../ARCHITECTURE.md)). That's a smaller, unresolved
-  decision worth its own ADR once intentionally decided rather than left
-  implicit.
+  [ARCHITECTURE.md](../ARCHITECTURE.md)). That was flagged as a smaller,
+  unresolved decision worth its own ADR — see
+  [ADR 0004](0004-modules-folder-nesting.md), which formally adopts
+  `/Modules` nesting.

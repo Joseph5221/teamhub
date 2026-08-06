@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 
-namespace TeamHub.Server.Features.Dashboard;
+namespace TeamHub.Server.Modules.Dashboard;
 
 /// <summary>
 /// Endpoints for dashboard operations

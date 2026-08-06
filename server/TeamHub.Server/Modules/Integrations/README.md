@@ -21,8 +21,11 @@ public interface IModuleConnector
 
 - This interface doesn't exist in code yet — only the generic
   `Integrations/` folder does, with no `Jira`/`Calendar`/`Slack` subfolders.
-- Per [docs/ROADMAP.md](../../../docs/ROADMAP.md), build **one** integration
+- Per [docs/ROADMAP.md](../../../../docs/ROADMAP.md), build **one** integration
   first (Jira or GitHub) to validate this interface shape before copying the
   pattern to the others.
 - Depends on `Teams` (integrations are configured per-team) and should use
-  Polly for retry/circuit-breaking per [docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md).
+  Polly for retry/circuit-breaking per [docs/ARCHITECTURE.md](../../../../docs/ARCHITECTURE.md).
+- Once a real connector exists, it should surface its data through
+  `Modules/Projects` rather than inventing its own project concept — see
+  [ADR 0006](../../../../docs/adr/0006-projects-definition.md).

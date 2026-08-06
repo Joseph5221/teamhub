@@ -3,7 +3,7 @@
 **Status:** implemented (added in commit `2d2bc51`). `GET /api/dashboard`
 (JWT-protected) returns user info, per-integration status (name/type/status/
 enabled), and stats (team/project/integration counts, connected-integration
-count). See [server/TeamHub.Server/README.md](../README.md) for the request/
+count). See [server/TeamHub.Server/README.md](../../README.md) for the request/
 response shape and how to call it via Swagger.
 
 ## Responsibilities
@@ -11,7 +11,7 @@ response shape and how to call it via Swagger.
 Aggregation layer for the team board: reads the current user's `Teams` and
 `Integrations` (via EF navigation properties on `User`) and returns a
 combined view model. Corresponds to "Example 1 — Team Board Load" in
-[docs/ARCHITECTURE.md](../../../docs/ARCHITECTURE.md) — though today it reads
+[docs/ARCHITECTURE.md](../../../../docs/ARCHITECTURE.md) — though today it reads
 directly off `AppDbContext` rather than going through separate `Teams`/
 `Integrations` services, since those modules don't exist yet.
 

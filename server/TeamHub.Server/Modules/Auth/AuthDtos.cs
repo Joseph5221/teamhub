@@ -1,4 +1,4 @@
-namespace TeamHub.Server.Features.Auth;
+namespace TeamHub.Server.Modules.Auth;
 
 /// <summary>
 /// Request model for user login

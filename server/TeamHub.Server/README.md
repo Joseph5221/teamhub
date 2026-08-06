@@ -4,16 +4,16 @@ A modern ASP.NET Core Minimal API built with feature-based architecture.
 
 ## 🏗️ Architecture
 
-This project uses **Feature-Based Architecture**, organizing code by business features rather than technical layers:
+This project uses **Feature-Based Architecture**, organizing code by business features rather than technical layers, nested under `Modules/` (see [ADR 0004](../../docs/adr/0004-modules-folder-nesting.md)):
 
 ```
-Features/
+Modules/
 ├── Auth/          - Authentication & JWT tokens
 ├── Dashboard/     - User dashboard with integration TODO items
 ├── Teams/         - Team management (TODO)
-├── Projects/      - Project management (TODO)
+├── Projects/      - Team-scoped, integration-aggregating project records (TODO) — see ADR 0006
 ├── Integrations/  - Third-party integrations (TODO)
-└── Users/         - User management (TODO)
+└── Users/         - User profile data, split from Auth per ADR 0005 (TODO)
 ```
 
 ## 🚀 Getting Started
@@ -122,9 +122,9 @@ spread across them. Reset to a clean slate without restarting the process:
 
 ### 🚧 Coming Soon (Placeholders Ready)
 - Teams CRUD
-- Projects CRUD
+- Projects CRUD — team-scoped, meant to aggregate integration data once connectors exist (see [ADR 0006](../../docs/adr/0006-projects-definition.md))
 - Integrations management
-- User management
+- User management — profile data split from Auth (see [ADR 0005](../../docs/adr/0005-auth-users-boundary.md))
 
 ## 🗄️ Database
 
@@ -167,9 +167,13 @@ Using EF Core's **in-memory provider**, deliberately, for now — see
 
 ```
 TeamHub.Server/
-├── Features/              # Feature modules
+├── Modules/               # Feature modules (see ADR 0004)
 │   ├── Auth/             # Authentication
-│   └── Dashboard/        # Dashboard
+│   ├── Dashboard/        # Dashboard
+│   ├── Teams/            # Team management (TODO)
+│   ├── Users/            # User profile data (TODO, see ADR 0005)
+│   ├── Projects/         # Team-scoped project records (TODO, see ADR 0006)
+│   └── Integrations/     # Third-party integrations (TODO)
 ├── Domain/               # Domain models
 │   ├── Entities/         # Database entities
 │   ├── Common/           # Shared domain logic
@@ -205,7 +209,7 @@ TeamHub.Server/
 
 ### Adding a New Feature
 
-1. Create folder in `Features/`
+1. Create folder in `Modules/`
 2. Add DTOs file (`FeatureDtos.cs`)
 3. Add service interface (`IFeatureService.cs`)
 4. Add service implementation (`FeatureService.cs`)
@@ -216,7 +220,7 @@ TeamHub.Server/
 ### Example: Adding Teams Feature
 
 ```csharp
-// Features/Teams/TeamEndpoints.cs
+// Modules/Teams/TeamEndpoints.cs
 public static class TeamEndpoints
 {
     public static void MapTeamEndpoints(this IEndpointRouteBuilder app)

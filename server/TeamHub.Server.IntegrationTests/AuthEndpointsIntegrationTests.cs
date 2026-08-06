@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
-using TeamHub.Server.Features.Auth;
+using TeamHub.Server.Modules.Auth;
 
 public class AuthEndpointsIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {

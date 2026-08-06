@@ -1,6 +1,6 @@
 using TeamHub.Server.Extensions;
-using TeamHub.Server.Features.Auth;
-using TeamHub.Server.Features.Dashboard;
+using TeamHub.Server.Modules.Auth;
+using TeamHub.Server.Modules.Dashboard;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
 

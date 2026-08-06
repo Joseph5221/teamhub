@@ -1,6 +1,6 @@
 using TeamHub.Server.Domain.Common;
 
-namespace TeamHub.Server.Features.Dashboard;
+namespace TeamHub.Server.Modules.Dashboard;
 
 /// <summary>
 /// Service for dashboard operations

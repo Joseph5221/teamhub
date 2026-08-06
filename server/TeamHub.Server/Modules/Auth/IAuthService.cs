@@ -1,6 +1,6 @@
 using TeamHub.Server.Domain.Common;
 
-namespace TeamHub.Server.Features.Auth;
+namespace TeamHub.Server.Modules.Auth;
 
 /// <summary>
 /// Service for handling authentication operations

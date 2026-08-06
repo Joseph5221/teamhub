@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace TeamHub.Server.Features.Auth;
+namespace TeamHub.Server.Modules.Auth;
 
 /// <summary>
 /// Endpoints for authentication operations

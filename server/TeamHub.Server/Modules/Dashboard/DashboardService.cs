@@ -3,7 +3,7 @@ using TeamHub.Server.Domain.Common;
 using TeamHub.Server.Domain.Enums;
 using TeamHub.Server.Infrastructure.Data;
 
-namespace TeamHub.Server.Features.Dashboard;
+namespace TeamHub.Server.Modules.Dashboard;
 
 /// <summary>
 /// Implementation of dashboard service

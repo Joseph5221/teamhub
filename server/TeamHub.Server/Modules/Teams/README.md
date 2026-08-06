@@ -10,7 +10,9 @@
 
 ## Notes
 
-- Depends on `Features/Auth` for identifying the current user.
+- Depends on `Modules/Auth` for identifying the current user.
 - `Dashboard`, `Integrations`, and `Projects` all key data off `teamId` —
   this module needs to exist before those are meaningfully testable end to
-  end. See [docs/ROADMAP.md](../../../docs/ROADMAP.md).
+  end. `Projects` in particular is team-scoped by decision, see
+  [ADR 0006](../../../../docs/adr/0006-projects-definition.md).
+  See [docs/ROADMAP.md](../../../../docs/ROADMAP.md).

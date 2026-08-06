@@ -1,4 +1,4 @@
-namespace TeamHub.Server.Features.Dashboard;
+namespace TeamHub.Server.Modules.Dashboard;
 
 /// <summary>
 /// Response model for dashboard data

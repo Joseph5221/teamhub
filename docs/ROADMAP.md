@@ -1,6 +1,6 @@
 # TeamHub — Status & Roadmap
 
-Last reviewed: 2026-08-05. Update the "Current Status" section whenever you
+Last reviewed: 2026-08-06. Update the "Current Status" section whenever you
 pick this project back up or wrap a session — it's meant to answer "where
 did I leave off?" in under a minute.
 
@@ -100,8 +100,32 @@ been verified end-to-end for the first time (not just built).
   undocumented top-level `Security/`/`Services/` folders (unrelated to
   `Infrastructure/Security/`, which still holds the real password-hashing
   stubs) — leftover scaffolding, never referenced anywhere.
+- ✅ **Three structural decisions resolved (2026-08-06)**, closing out the
+  open questions in `docs/ARCHITECTURE.md` § "Reality check":
+  - **`/Modules` nesting formally adopted** — `Auth`, `Dashboard`, `Teams`,
+    `Users`, `Projects`, `Integrations` moved (via `git mv`, history
+    preserved) from flat top-level folders to
+    `server/TeamHub.Server/Modules/<Name>/`; `Auth`/`Dashboard` namespaces
+    corrected from `TeamHub.Server.Features.*` to
+    `TeamHub.Server.Modules.*` to match. `Domain`/`Infrastructure`/
+    `Extensions`/`Middleware` stay top-level (shared kernel, not modules).
+    Verified via `dotnet build teamhub.sln` (0 errors) and `dotnet test
+    teamhub.sln` (8/8 passing). See
+    [ADR 0004](adr/0004-modules-folder-nesting.md).
+  - **Auth/Users boundary decided**: `Auth` owns credentials/sessions/
+    tokens, `Users` owns profile data (display name, avatar, preferences)
+    — both still on the single `User` entity for now. See
+    [ADR 0005](adr/0005-auth-users-boundary.md).
+  - **`Projects` defined**: team-scoped (`Project.TeamId`/`Team`) and meant
+    to aggregate data from that team's integrations (Jira, GitHub, infra
+    monitoring) once real connectors exist — not a pure Jira mirror, not a
+    fully generic tracker with no integration data. The exact
+    `Project` ↔ integration-data linking shape is left for whoever builds
+    the first real integration. See
+    [ADR 0006](adr/0006-projects-definition.md).
 - ❌ `Teams`, `Projects`, `Integrations`, `Users` modules are still empty
-  stubs.
+  stubs — now with their boundaries decided, so building them out is
+  unblocked.
 - ❌ Auth still has no refresh tokens, no email verification — password
   hashing and validation are both done (see above).
 
@@ -127,10 +151,10 @@ making Auth trustworthy, then resuming feature work.
 
 1. ~~Add password hashing~~ — done (2026-08-05), see Current Status above.
 2. ~~Add password strength/length validation on register~~ — done (2026-08-06), see Current Status above.
-3. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`, and the `Team.Members`/`Team.Owner` EF relationships are now configured and ready to use.
-4. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest.
-5. **Revisit the `/Modules` vs. flat-folder question** (see [ARCHITECTURE.md](ARCHITECTURE.md#reality-check--where-the-code-has-diverged-from-this-plan)) deliberately, and write an ADR for whichever way you go.
-6. **Decide the `Projects` vs. `Users` vs. `Auth` boundary** — write down what each owns before building any of them out.
+3. ~~Revisit the `/Modules` vs. flat-folder question~~ — done (2026-08-06), see [ADR 0004](adr/0004-modules-folder-nesting.md).
+4. ~~Decide the `Projects` vs. `Users` vs. `Auth` boundary~~ — done (2026-08-06), see [ADR 0005](adr/0005-auth-users-boundary.md) and [ADR 0006](adr/0006-projects-definition.md).
+5. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`, and the `Team.Members`/`Team.Owner` EF relationships are now configured and ready to use.
+6. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest. Per [ADR 0006](adr/0006-projects-definition.md), design how it attaches its data to a `Project` as part of this.
 7. **Smoke-test `docker compose up --build`** against the reconciled paths above on a machine with Docker running — this session fixed the paths and added the server `Dockerfile` but couldn't verify the full build (no Docker daemon available here).
 
 ## Not Yet — Deliberately Deferred

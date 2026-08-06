@@ -2,7 +2,7 @@
 
 > Condensed from the original "TeamHub High-Level Architecture" document, with
 > a reality-check section added below reflecting what's actually in the repo
-> as of 2026-08-01. See [docs/adr/0001-modular-monolith-architecture.md](adr/0001-modular-monolith-architecture.md)
+> as of 2026-08-06. See [docs/adr/0001-modular-monolith-architecture.md](adr/0001-modular-monolith-architecture.md)
 > for the decision record.
 
 ## Goals
@@ -89,43 +89,55 @@ module boundaries clean now.
 
 This section exists so future you (or an AI assistant) doesn't assume the code
 matches the plan above just because the plan document exists. It's kept
-current against the actual repo state — last updated 2026-08-01.
+current against the actual repo state — last updated 2026-08-06.
 
 The actual layout is:
 
 ```
 server/TeamHub.Server/
-  Dashboard/        Domain/          Extensions/       Features/Auth/
-  Infrastructure/    Integrations/    Middleware/       Projects/
-  Security/          Services/        Teams/            Users/
+  Domain/             Extensions/         Middleware/
+  Infrastructure/     Modules/
+    Modules/Auth/       Modules/Dashboard/   Modules/Teams/
+    Modules/Users/      Modules/Projects/    Modules/Integrations/
 ```
 
 Differences from the planned architecture doc:
 
-1. **No `/Modules` nesting.** The plan called for
-   `/Modules/{Auth,Teams,Integrations/{Jira,Calendar,Slack},InfraWatch}`.
-   The actual repo uses flat, top-level feature folders instead
-   (`Auth` lives under `Features/`, everything else is a top-level folder).
-   This is a reasonable, common alternative ("vertical slice" folder-per-feature)
-   but it's a real deviation, not just a naming difference — decide
-   deliberately whether to restructure into `/Modules` or formally adopt the
-   flat layout (see [ADR 0001](adr/0001-modular-monolith-architecture.md)).
-2. **Extra `Users` and `Projects` modules** exist in code but aren't in either
-   planning document. `Projects` presumably maps to Jira-style issue tracking
-   and `Users` overlaps with `Auth` — worth clarifying the boundary between
-   them before building either out further.
+1. **`/Modules` nesting is now formally adopted, not a deviation.** The
+   plan called for `/Modules/{Auth,Teams,Integrations/{Jira,Calendar,Slack},InfraWatch}`;
+   the code had drifted to flat top-level feature folders with namespaces
+   (`Features.Auth`, `Features.Dashboard`) that didn't even match that flat
+   layout. Both have now been corrected: `Auth`, `Dashboard`, `Teams`,
+   `Users`, `Projects`, `Integrations` physically live under
+   `server/TeamHub.Server/Modules/`, and namespaces match
+   (`TeamHub.Server.Modules.<Name>`). `Domain`, `Infrastructure`,
+   `Extensions`, `Middleware` stay outside `/Modules` — shared kernel, not
+   feature modules. See [ADR 0004](adr/0004-modules-folder-nesting.md).
+2. **`Users` and `Projects` boundaries are now decided**, not just present
+   without a rationale:
+   - `Auth` owns credentials/sessions/tokens; `Users` owns profile data
+     (display name, avatar, preferences) on the same `User` entity — see
+     [ADR 0005](adr/0005-auth-users-boundary.md).
+   - `Project` is team-scoped (`Project.TeamId`/`Team`) and meant to
+     aggregate data from that team's integrations (Jira, GitHub, infra
+     monitoring, etc.) once real connectors exist, rather than being a pure
+     Jira mirror or a fully generic tracker with no integration data — see
+     [ADR 0006](adr/0006-projects-definition.md). The exact
+     `Project` ↔ integration-data linking shape is still undesigned.
 3. **No `InfraWatch`, `Jira`, `Calendar`, or `Slack` folders yet** — only a
-   single generic `Integrations` folder exists, unimplemented.
+   single generic `Modules/Integrations` folder exists, unimplemented. Per
+   ADR 0004, real integration submodules nest under
+   `Modules/Integrations/` (e.g. `Modules/Integrations/Jira/`) once built.
 4. **`IModuleConnector` doesn't exist in code yet.** No interface unifies the
    integrations.
-5. **`Auth` and `Dashboard` are now real implementations.**
+5. **`Auth` and `Dashboard` are real, dev-appropriate implementations.**
    Login/register issue JWTs, `GET /api/dashboard` returns user info +
-   per-integration TODO status + team/project/integration counts. Auth is
-   explicitly dev-only right now: **login accepts any password**, and
-   register stores the raw password string as `PasswordHash` with no
-   hashing — both called out as `TODO` in `AuthService.cs`. Don't treat this
-   as real auth; it needs `IPasswordHasher` (still a stub) before it's
-   anything but a placeholder.
+   per-integration TODO status + team/project/integration counts. Auth now
+   has real password hashing (`IPasswordHasher`/`PasswordHasher`, wrapping
+   `Microsoft.AspNetCore.Identity.PasswordHasher<T>`) and validation
+   (`IPasswordValidator`/`PasswordValidator`) — login rejects wrong
+   passwords, register rejects weak ones. Still missing: refresh tokens,
+   email verification.
 6. **`Teams`, `Projects`, `Integrations`, `Users` are still empty stubs.**
    Their `I<Module>Service`/`<Module>Service`/`<Module>Endpoints`/`<Module>Dtos`
    files remain 0 bytes, and nothing in `Program.cs` maps their endpoints
@@ -205,12 +217,17 @@ Differences from the planned architecture doc:
     apart; update both when priorities change.
 
 None of this is unusual for a project mid-restart — real progress has
-happened (working Auth/Dashboard with JWT, now actually verified end-to-end,
-not just built), alongside some rougher edges (Teams/Projects/Integrations/
-Users still stubs, dev-only Auth) typical of AI-assisted or late-night
-scaffolding that didn't get a final pass. The environment-reconciliation work
-(JWT secret setup, .NET runtime, docker-compose/scripts paths, in-memory-DB
-decision) is done — see [ADR 0002](adr/0002-in-memory-database-for-now.md) and
-[ADR 0003](adr/0003-target-net8-and-install-the-runtime.md). "Next steps"
-should prioritize password hashing before adding new features. See
-[ROADMAP.md](ROADMAP.md).
+happened (working Auth/Dashboard with JWT, password hashing, and password
+validation, all verified end-to-end, not just built), alongside some rougher
+edges (Teams/Projects/Integrations/Users still stubs) typical of
+AI-assisted or late-night scaffolding that didn't get a final pass. The
+environment-reconciliation work (JWT secret setup, .NET runtime,
+docker-compose/scripts paths, in-memory-DB decision) is done — see
+[ADR 0002](adr/0002-in-memory-database-for-now.md) and
+[ADR 0003](adr/0003-target-net8-and-install-the-runtime.md). The structural
+decisions this restart surfaced (`/Modules` nesting, the Auth/Users
+boundary, what `Projects` is) are also done — see
+[ADR 0004](adr/0004-modules-folder-nesting.md),
+[ADR 0005](adr/0005-auth-users-boundary.md), and
+[ADR 0006](adr/0006-projects-definition.md). "Next steps" should prioritize
+implementing `Teams` before adding new features. See [ROADMAP.md](ROADMAP.md).
