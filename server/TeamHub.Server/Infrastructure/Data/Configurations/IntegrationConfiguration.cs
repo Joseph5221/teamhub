@@ -8,9 +8,9 @@ public class IntegrationConfiguration : IEntityTypeConfiguration<Integration>
 {
     public void Configure(EntityTypeBuilder<Integration> builder)
     {
-        builder.HasOne(i => i.User)
-            .WithMany(u => u.Integrations)
-            .HasForeignKey(i => i.UserId)
+        builder.HasOne(i => i.Team)
+            .WithMany(t => t.Integrations)
+            .HasForeignKey(i => i.TeamId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

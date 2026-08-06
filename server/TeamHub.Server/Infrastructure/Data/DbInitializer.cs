@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TeamHub.Server.Domain.Entities;
+using TeamHub.Server.Domain.Enums;
 
 namespace TeamHub.Server.Infrastructure.Data;
 
@@ -84,10 +85,10 @@ public static class DbInitializer
         );
 
         context.Integrations.AddRange(
-            new Integration { Name = "GitHub", Type = "VersionControl", Status = "TODO", Description = "Connect your GitHub repositories", User = alice },
-            new Integration { Name = "Jira", Type = "ProjectManagement", Status = "TODO", Description = "Sync issues and tickets from Jira", User = alice },
-            new Integration { Name = "Slack", Type = "Communication", Status = "TODO", Description = "Get notifications in Slack", User = alice },
-            new Integration { Name = "GitHub", Type = "VersionControl", Status = "Connected", Description = "Connect your GitHub repositories", User = bob, LastSyncedAt = DateTime.UtcNow.AddHours(-2) }
+            new Integration { Name = "GitHub", Type = IntegrationType.VersionControl, Status = IntegrationStatus.Todo, Description = "Connect your GitHub repositories", Team = platformTeam },
+            new Integration { Name = "Jira", Type = IntegrationType.ProjectManagement, Status = IntegrationStatus.Todo, Description = "Sync issues and tickets from Jira", Team = platformTeam },
+            new Integration { Name = "Slack", Type = IntegrationType.Communication, Status = IntegrationStatus.Todo, Description = "Get notifications in Slack", Team = platformTeam },
+            new Integration { Name = "GitHub", Type = IntegrationType.VersionControl, Status = IntegrationStatus.Connected, Description = "Connect your GitHub repositories", Team = growthTeam, LastSyncedAt = DateTime.UtcNow.AddHours(-2) }
         );
 
         await context.SaveChangesAsync();

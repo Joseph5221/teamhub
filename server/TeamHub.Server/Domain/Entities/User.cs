@@ -34,9 +34,4 @@ public class User : BaseEntity
     /// Teams this user belongs to
     /// </summary>
     public ICollection<Team> Teams { get; set; } = new List<Team>();
-    
-    /// <summary>
-    /// Integrations owned by this user
-    /// </summary>
-    public ICollection<Integration> Integrations { get; set; } = new List<Integration>();
 }

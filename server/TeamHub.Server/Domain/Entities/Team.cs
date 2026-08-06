@@ -34,4 +34,9 @@ public class Team : BaseEntity
     /// Projects belonging to this team
     /// </summary>
     public ICollection<Project> Projects { get; set; } = new List<Project>();
+
+    /// <summary>
+    /// Integrations configured for this team
+    /// </summary>
+    public ICollection<Integration> Integrations { get; set; } = new List<Integration>();
 }

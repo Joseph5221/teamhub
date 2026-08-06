@@ -69,6 +69,18 @@ been verified end-to-end for the first time (not just built).
   `./scripts/seed-db.sh` wraps it. The old `AppDbContext` `HasData` seed
   (one user, no relationships) is gone — `HasData` can't express `Team.Owner`/
   `Team.Members` cleanly, so seeding moved to runtime.
+- ✅ **Fixed a data-model mismatch found while scoping the Integrations
+  work**: `Integration` was owned by `User` (`UserId`), but
+  `docs/ARCHITECTURE.md`'s `IModuleConnector` interface and
+  `Integrations/README.md` both assume integrations are configured
+  per-team. `Integration` now has `TeamId`/`Team` (via `Team.Integrations`),
+  and `Type`/`Status` are real enums (`IntegrationType`/`IntegrationStatus`)
+  instead of unchecked strings — `DbInitializer` and `DashboardService`
+  updated to match, verified via `dotnet test` and a live
+  `register → login → /api/dashboard` run. Also removed two empty,
+  undocumented top-level `Security/`/`Services/` folders (unrelated to
+  `Infrastructure/Security/`, which still holds the real password-hashing
+  stubs) — leftover scaffolding, never referenced anywhere.
 - ❌ `Teams`, `Projects`, `Integrations`, `Users` modules are still empty
   stubs.
 - ❌ Auth is still dev-only (any password, unhashed storage) — next real

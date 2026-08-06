@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TeamHub.Server.Domain.Common;
+using TeamHub.Server.Domain.Enums;
 using TeamHub.Server.Infrastructure.Data;
 
 namespace TeamHub.Server.Features.Dashboard;
@@ -20,8 +21,8 @@ public class DashboardService : IDashboardService
     {
         // Get user with related data
         var user = await _context.Users
-            .Include(u => u.Integrations)
             .Include(u => u.Teams)
+                .ThenInclude(t => t.Integrations)
             .FirstOrDefaultAsync(u => u.Id == userId);
 
         if (user == null)
@@ -35,14 +36,20 @@ public class DashboardService : IDashboardService
             .Where(p => user.Teams.Select(t => t.Id).Contains(p.TeamId))
             .CountAsync();
 
-        // Map integrations
-        var integrations = user.Integrations
+        // Integrations are configured per-team; surface all integrations
+        // across every team the user belongs to.
+        var teamIntegrations = user.Teams
+            .SelectMany(t => t.Integrations)
+            .DistinctBy(i => i.Id)
             .OrderBy(i => i.Status) // TODO items first
+            .ToList();
+
+        var integrations = teamIntegrations
             .Select(i => new IntegrationInfo(
                 i.Id,
                 i.Name,
-                i.Type,
-                i.Status,
+                i.Type.ToString(),
+                i.Status.ToString(),
                 i.Description,
                 i.IsEnabled
             ))
@@ -53,7 +60,7 @@ public class DashboardService : IDashboardService
             TotalTeams: user.Teams.Count,
             TotalProjects: projectCount,
             TotalIntegrations: integrations.Count,
-            ConnectedIntegrations: integrations.Count(i => i.Status == "Connected")
+            ConnectedIntegrations: teamIntegrations.Count(i => i.Status == IntegrationStatus.Connected)
         );
 
         var userInfo = new UserInfo(
