@@ -31,7 +31,10 @@ Full context lives in `docs/`:
   `DbInitializer.SeedUserPassword`), 2 teams, 3 projects, 4 integrations —
   see `Infrastructure/Data/DbInitializer.cs`. `POST /api/dev/reseed`
   (dev-only, no auth) resets it without restarting the process.
-- `frontend/BlazorApp` builds and runs. `shared/Shared` builds.
+- `frontend/BlazorApp` builds and runs. The `shared/Shared` classlib was
+  removed on 2026-08-07 — it was an unused, empty scaffold project (no
+  `ProjectReference` from either app, no code in it). Re-add it when
+  frontend/backend integration actually needs shared DTOs/contracts.
 - **`server/TeamHub.Server` compiles** (`dotnet build teamhub.sln` — 0
   errors) and **Auth + Dashboard are implemented and verified end-to-end**:
   `POST /api/auth/login`, `POST /api/auth/register`, and `GET /api/dashboard`
@@ -112,8 +115,13 @@ server/TeamHub.Server/         ASP.NET Core backend — feature-folder modules:
   Middleware/                    exception/logging middleware (stub, unused)
 server/TeamHub.Server.Tests/            unit tests — builds and passes
 server/TeamHub.Server.IntegrationTests/ integration tests — builds and passes
-shared/Shared/                 Shared types between frontend/backend (near-empty)
 ```
+
+There is no `shared/` project right now — an empty scaffold classlib lived at
+`shared/Shared/` but nothing referenced it, so it was removed on 2026-08-07.
+Re-create it (a real `dotnet new classlib`, wired into `teamhub.sln` and
+referenced from both `frontend/BlazorApp` and `server/TeamHub.Server`) once
+frontend/backend integration actually needs shared DTOs or contracts.
 
 Each module folder has its own `README.md` with status + responsibilities —
 check it before working in that folder. Note the actual layout is flatter
