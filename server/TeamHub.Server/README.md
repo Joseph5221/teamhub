@@ -10,7 +10,7 @@ This project uses **Feature-Based Architecture**, organizing code by business fe
 Modules/
 ├── Auth/          - Authentication & JWT tokens
 ├── Dashboard/     - User dashboard with integration TODO items
-├── Teams/         - Team management (TODO)
+├── Teams/         - Team creation & membership (owner/member roles)
 ├── Projects/      - Team-scoped, integration-aggregating project records (TODO) — see ADR 0006
 ├── Integrations/  - Third-party integrations (TODO)
 └── Users/         - User profile data, split from Auth per ADR 0005 (TODO)
@@ -120,8 +120,14 @@ spread across them. Reset to a clean slate without restarting the process:
   - Integration TODO list (GitHub, Jira, Slack placeholders)
   - Basic stats (teams, projects, integrations)
 
+- **Teams Feature** (see `Modules/Teams/README.md` for full detail)
+  - Create a team (caller becomes owner)
+  - Get team details / list members (members only)
+  - Update team settings (owner only)
+  - Add an existing user by email / remove a member (owner only)
+  - Two roles: owner (`Team.OwnerId`) and member (`Team.Members`, includes the owner)
+
 ### 🚧 Coming Soon (Placeholders Ready)
-- Teams CRUD
 - Projects CRUD — team-scoped, meant to aggregate integration data once connectors exist (see [ADR 0006](../../docs/adr/0006-projects-definition.md))
 - Integrations management
 - User management — profile data split from Auth (see [ADR 0005](../../docs/adr/0005-auth-users-boundary.md))
@@ -148,6 +154,14 @@ Using EF Core's **in-memory provider**, deliberately, for now — see
 ### Dashboard
 - `GET /api/dashboard` - Get user dashboard (requires auth)
 
+### Teams (all require auth)
+- `POST /api/teams` - Create a team (caller becomes owner)
+- `GET /api/teams/{teamId}` - Get team details (members only)
+- `PUT /api/teams/{teamId}` - Update team settings (owner only)
+- `GET /api/teams/{teamId}/members` - List members (members only)
+- `POST /api/teams/{teamId}/members` - Add an existing user by email (owner only)
+- `DELETE /api/teams/{teamId}/members/{memberUserId}` - Remove a member (owner only)
+
 ### Dev-only (Development environment only, not authenticated)
 - `POST /api/dev/reseed` - Clear and reseed the in-memory database with test data
 
@@ -170,7 +184,7 @@ TeamHub.Server/
 ├── Modules/               # Feature modules (see ADR 0004)
 │   ├── Auth/             # Authentication
 │   ├── Dashboard/        # Dashboard
-│   ├── Teams/            # Team management (TODO)
+│   ├── Teams/            # Team management (owner/member roles)
 │   ├── Users/            # User profile data (TODO, see ADR 0005)
 │   ├── Projects/         # Team-scoped project records (TODO, see ADR 0006)
 │   └── Integrations/     # Third-party integrations (TODO)
@@ -189,7 +203,7 @@ TeamHub.Server/
 ## 🛠️ Next Steps
 
 ### Phase 1: Build More Features
-1. Create Teams feature (copy Auth/Dashboard pattern)
+1. ~~Create Teams feature~~ — done, see `Modules/Teams/README.md`
 2. Create Projects feature
 3. Create Integrations feature
 4. Create Users feature
@@ -217,26 +231,13 @@ TeamHub.Server/
 6. Register service in `ServiceCollectionExtensions.cs`
 7. Map endpoints in `Program.cs`
 
-### Example: Adding Teams Feature
+### Example: `Modules/Teams` as a reference implementation
 
-```csharp
-// Modules/Teams/TeamEndpoints.cs
-public static class TeamEndpoints
-{
-    public static void MapTeamEndpoints(this IEndpointRouteBuilder app)
-    {
-        var group = app.MapGroup("/api/teams")
-            .WithTags("Teams")
-            .RequireAuthorization();
-            
-        group.MapGet("/", GetTeams);
-        group.MapPost("/", CreateTeam);
-    }
-}
-
-// Register in Program.cs
-app.MapTeamEndpoints();
-```
+`Modules/Teams` (alongside `Modules/Auth`/`Modules/Dashboard`) is now a real,
+tested implementation of the pattern above — copy its shape
+(`TeamDtos.cs`/`ITeamService.cs`/`TeamService.cs`/`TeamEndpoints.cs`, the
+`Result<T>`/`Error` pattern, `ClaimsPrincipal` → JWT `sub` claim for the
+current user) when building `Projects`, `Integrations`, or `Users` next.
 
 ## 🔧 Configuration
 

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TeamHub.Server.Modules.Auth;
 using TeamHub.Server.Modules.Dashboard;
+using TeamHub.Server.Modules.Teams;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
 
@@ -95,9 +96,9 @@ public static class ServiceCollectionExtensions
         // Register feature services
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDashboardService, DashboardService>();
-        
+        services.AddScoped<ITeamService, TeamService>();
+
         // TODO: Add more feature services as they're created
-        // services.AddScoped<ITeamService, TeamService>();
         // services.AddScoped<IProjectService, ProjectService>();
 
         return services;

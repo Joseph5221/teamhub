@@ -1,14 +1,36 @@
 # TeamHub — Status & Roadmap
 
-Last reviewed: 2026-08-06. Update the "Current Status" section whenever you
+Last reviewed: 2026-08-08. Update the "Current Status" section whenever you
 pick this project back up or wrap a session — it's meant to answer "where
 did I leave off?" in under a minute.
 
 ## Current Status
 
-The environment is now reconciled and the Auth/Dashboard flow has actually
-been verified end-to-end for the first time (not just built).
+The environment is reconciled, Auth/Dashboard are verified end-to-end, and
+Teams is now implemented and verified end-to-end too.
 
+- ✅ **Teams implemented (2026-08-08)**: `ITeamService`/`TeamService`
+  (`Modules/Teams/`) support creating a team (caller becomes owner + first
+  member), getting a team's details, listing members, updating team
+  settings, adding an existing user by email, and removing a member — all
+  via the `Result<T>`/`Error` pattern with codes like `Team.Forbidden`,
+  `Team.AlreadyMember`, `Team.CannotRemoveOwner`. Two roles: **owner**
+  (`Team.OwnerId`, singular — matches the existing EF config) and
+  **member** (`Team.Members`, includes the owner, matching the
+  `DbInitializer` seed convention). Only the owner can update settings,
+  add members, or remove members; the owner can't be removed via the
+  remove-member endpoint (no ownership-transfer feature yet). Viewing a
+  team or its member list requires being a member (owner or not) —
+  non-members get `Team.Forbidden` (403), not a 404, so team existence
+  does leak to any authenticated user who knows the ID; revisit if that
+  becomes a real concern. `TeamEndpoints.MapTeamEndpoints()` is wired into
+  `Program.cs`, `ITeamService` registered in
+  `ServiceCollectionExtensions.AddFeatures`. Verified via
+  `dotnet test teamhub.sln` (16 new unit tests in
+  `TeamHub.Server.Tests/Services/TeamServiceTests.cs`, 6 new integration
+  tests in `TeamHub.Server.IntegrationTests/TeamEndpointsIntegrationTests.cs`
+  hitting a real running server through `WebApplicationFactory`) — 23/23
+  passing total.
 - ✅ `dotnet build teamhub.sln` succeeds — 0 errors.
 - ✅ **This machine now has a .NET 8 runtime** (installed via
   `brew install dotnet@8`, per
@@ -61,8 +83,8 @@ been verified end-to-end for the first time (not just built).
   [ADR 0002](adr/0002-in-memory-database-for-now.md). `docker-compose.yml`
   no longer runs a Postgres `db` service.
 - ✅ **Both test projects compile, are wired into `teamhub.sln`, and now
-  actually run and pass** (`TeamHub.Server.Tests`: 7 tests;
-  `TeamHub.Server.IntegrationTests`: 1 test) via `scripts/run-tests.sh` /
+  actually run and pass** (`TeamHub.Server.Tests`: 23 tests;
+  `TeamHub.Server.IntegrationTests`: 7 tests) via `scripts/run-tests.sh` /
   the .NET 8 runtime from ADR 0003.
 - ✅ **One canonical solution file**: `teamhub.sln` at the repo root,
   covering frontend + backend + shared + both test projects.
@@ -123,9 +145,9 @@ been verified end-to-end for the first time (not just built).
     `Project` ↔ integration-data linking shape is left for whoever builds
     the first real integration. See
     [ADR 0006](adr/0006-projects-definition.md).
-- ❌ `Teams`, `Projects`, `Integrations`, `Users` modules are still empty
-  stubs — now with their boundaries decided, so building them out is
-  unblocked.
+- ❌ `Projects`, `Integrations`, `Users` modules are still empty stubs —
+  `Teams` is done (see above); their boundaries are decided, so building
+  them out is unblocked.
 - ❌ Auth still has no refresh tokens, no email verification — password
   hashing and validation are both done (see above).
 
@@ -153,7 +175,7 @@ making Auth trustworthy, then resuming feature work.
 2. ~~Add password strength/length validation on register~~ — done (2026-08-06), see Current Status above.
 3. ~~Revisit the `/Modules` vs. flat-folder question~~ — done (2026-08-06), see [ADR 0004](adr/0004-modules-folder-nesting.md).
 4. ~~Decide the `Projects` vs. `Users` vs. `Auth` boundary~~ — done (2026-08-06), see [ADR 0005](adr/0005-auth-users-boundary.md) and [ADR 0006](adr/0006-projects-definition.md).
-5. **Implement Teams** (create team, join team, list members) — next real dependency once Auth is trustworthy; `Dashboard` already assumes `user.Teams`, and the `Team.Members`/`Team.Owner` EF relationships are now configured and ready to use.
+5. ~~Implement Teams~~ (create team, add/remove/invite members, list members, owner/member permission checks) — done (2026-08-08), see Current Status above.
 6. **Pick one integration to prove out the pattern** — Jira or GitHub, both have well-documented REST APIs and free developer accounts. Use it to validate `IModuleConnector`'s shape (see [ARCHITECTURE.md](ARCHITECTURE.md#module-interface-contract)) before copying the pattern to the rest. Per [ADR 0006](adr/0006-projects-definition.md), design how it attaches its data to a `Project` as part of this.
 7. **Smoke-test `docker compose up --build`** against the reconciled paths above on a machine with Docker running — this session fixed the paths and added the server `Dockerfile` but couldn't verify the full build (no Docker daemon available here).
 
