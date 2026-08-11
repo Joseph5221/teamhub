@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using TeamHub.Server.Domain.Entities;
 using TeamHub.Server.Domain.Enums;
@@ -92,11 +93,29 @@ public static class DbInitializer
             }
         );
 
+        // The growth-team GitHub integration points at a real, public
+        // GitHub org ("octokit" — GitHub's own API client libraries org)
+        // with no personal access token, so GET /api/teams/{id}/integrations/{id}/data
+        // returns real sample repo data out of the box for frontend work —
+        // no dev needs to mint a PAT just to see the widget populated.
+        // Unauthenticated GitHub API calls are rate-limited (60/hour/IP);
+        // add a "personalAccessToken" key to this config to raise that.
+        var githubSampleConfig = JsonSerializer.Serialize(new Dictionary<string, string> { ["organization"] = "octokit" });
+
         context.Integrations.AddRange(
             new Integration { Name = "GitHub", Type = IntegrationType.VersionControl, Status = IntegrationStatus.Todo, Description = "Connect your GitHub repositories", Team = platformTeam },
             new Integration { Name = "Jira", Type = IntegrationType.ProjectManagement, Status = IntegrationStatus.Todo, Description = "Sync issues and tickets from Jira", Team = platformTeam },
             new Integration { Name = "Slack", Type = IntegrationType.Communication, Status = IntegrationStatus.Todo, Description = "Get notifications in Slack", Team = platformTeam },
-            new Integration { Name = "GitHub", Type = IntegrationType.VersionControl, Status = IntegrationStatus.Connected, Description = "Connect your GitHub repositories", Team = growthTeam, LastSyncedAt = DateTime.UtcNow.AddHours(-2) }
+            new Integration
+            {
+                Name = "GitHub",
+                Type = IntegrationType.VersionControl,
+                Status = IntegrationStatus.Connected,
+                Description = "Connect your GitHub repositories",
+                Team = growthTeam,
+                ConfigurationData = githubSampleConfig,
+                LastSyncedAt = DateTime.UtcNow.AddHours(-2)
+            }
         );
 
         await context.SaveChangesAsync();

@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using TeamHub.Server.Modules.Auth;
 using TeamHub.Server.Modules.Dashboard;
+using TeamHub.Server.Modules.Integrations;
+using TeamHub.Server.Modules.Integrations.GitHub;
 using TeamHub.Server.Modules.Teams;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
@@ -97,6 +99,26 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITeamService, TeamService>();
+        services.AddScoped<IIntegrationService, IntegrationService>();
+
+        // Integration connectors — each registers itself as an
+        // IModuleConnector; IntegrationService picks the right one by
+        // IntegrationType. Add one AddScoped<IModuleConnector, ...> line
+        // per connector as new ones are built (Jira, Slack, Calendar).
+        services.AddScoped<IModuleConnector, GitHubConnector>();
+
+        // GitHub's HTTP client: retry + circuit-breaker per
+        // docs/ARCHITECTURE.md "Resilience & Testing". Auth is a per-team
+        // personal access token read from Integration.ConfigurationData at
+        // call time (see GitHubConnector), not a header on this client.
+        services.AddHttpClient<IGitHubApiClient, GitHubApiClient>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.github.com/");
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("TeamHub-Server");
+            client.Timeout = TimeSpan.FromSeconds(10);
+        })
+        .AddPolicyHandler(GitHubResiliencePolicies.GetRetryPolicy())
+        .AddPolicyHandler(GitHubResiliencePolicies.GetCircuitBreakerPolicy());
 
         // TODO: Add more feature services as they're created
         // services.AddScoped<IProjectService, ProjectService>();

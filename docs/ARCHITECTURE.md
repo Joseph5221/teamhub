@@ -124,12 +124,23 @@ Differences from the planned architecture doc:
      Jira mirror or a fully generic tracker with no integration data — see
      [ADR 0006](adr/0006-projects-definition.md). The exact
      `Project` ↔ integration-data linking shape is still undesigned.
-3. **No `InfraWatch`, `Jira`, `Calendar`, or `Slack` folders yet** — only a
-   single generic `Modules/Integrations` folder exists, unimplemented. Per
-   ADR 0004, real integration submodules nest under
-   `Modules/Integrations/` (e.g. `Modules/Integrations/Jira/`) once built.
-4. **`IModuleConnector` doesn't exist in code yet.** No interface unifies the
-   integrations.
+3. **`Modules/Integrations/GitHub/` exists and is implemented** — the first
+   real integration submodule, per ADR 0004's nesting convention. No
+   `InfraWatch`, `Jira`, `Calendar`, or `Slack` folders yet; per
+   `docs/ROADMAP.md`, GitHub was built first to validate the shape before
+   copying the pattern to the rest.
+4. **`IModuleConnector` now exists in code** —
+   `server/TeamHub.Server/Modules/Integrations/IModuleConnector.cs`, matching
+   the shape below exactly (plus `ModuleConfig`/`ModuleData`/`ModuleDataItem`
+   normalized result types). `GitHubConnector` is the one implementation so
+   far; generic `IIntegrationService`/`IntegrationEndpoints` CRUD (owner
+   manages config, any member can read/trigger) dispatches to whichever
+   connector is registered for a team integration's `IntegrationType`, and
+   returns `501 Integration.NotSupported` for types with no connector yet
+   (Jira/Slack/Calendar/CI-CD/InfraMonitoring). See
+   `server/TeamHub.Server/Modules/Integrations/README.md` and
+   `.../GitHub/README.md` for detail, including Polly retry/circuit-breaker
+   wiring per "Resilience & Testing" below.
 5. **`Auth` and `Dashboard` are real, dev-appropriate implementations.**
    Login/register issue JWTs, `GET /api/dashboard` returns user info +
    per-integration TODO status + team/project/integration counts. Auth now
@@ -138,10 +149,11 @@ Differences from the planned architecture doc:
    (`IPasswordValidator`/`PasswordValidator`) — login rejects wrong
    passwords, register rejects weak ones. Still missing: refresh tokens,
    email verification.
-6. **`Teams`, `Projects`, `Integrations`, `Users` are still empty stubs.**
-   Their `I<Module>Service`/`<Module>Service`/`<Module>Endpoints`/`<Module>Dtos`
-   files remain 0 bytes, and nothing in `Program.cs` maps their endpoints
-   (commented out: `// app.MapTeamEndpoints();` etc.).
+6. **`Projects` and `Users` are still empty stubs; `Teams` and
+   `Integrations` are now implemented** (see items 3-4 above and
+   `docs/ROADMAP.md`). `Program.cs` maps `MapTeamEndpoints()` and
+   `MapIntegrationEndpoints()`; `MapProjectEndpoints()`/`MapUserEndpoints()`
+   stay commented out until those modules are built.
 7. **The server project compiles.**
    `dotnet build teamhub.sln` succeeds with 0 errors. `TeamHub.Server.csproj`
    references EF Core (`InMemory`, `Sqlite`, `Design`) and
@@ -217,9 +229,10 @@ Differences from the planned architecture doc:
     apart; update both when priorities change.
 
 None of this is unusual for a project mid-restart — real progress has
-happened (working Auth/Dashboard with JWT, password hashing, and password
-validation, all verified end-to-end, not just built), alongside some rougher
-edges (Teams/Projects/Integrations/Users still stubs) typical of
+happened (working Auth/Dashboard with JWT, password hashing, password
+validation, Teams, and a GitHub integration connector, all verified
+end-to-end, not just built), alongside some rougher edges (Projects/Users
+still stubs, Jira/Slack/Calendar connectors not started) typical of
 AI-assisted or late-night scaffolding that didn't get a final pass. The
 environment-reconciliation work (JWT secret setup, .NET runtime,
 docker-compose/scripts paths, in-memory-DB decision) is done — see

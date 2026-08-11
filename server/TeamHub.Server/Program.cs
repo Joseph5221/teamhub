@@ -1,6 +1,8 @@
+using System.Text.Json.Serialization;
 using TeamHub.Server.Extensions;
 using TeamHub.Server.Modules.Auth;
 using TeamHub.Server.Modules.Dashboard;
+using TeamHub.Server.Modules.Integrations;
 using TeamHub.Server.Modules.Teams;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
@@ -12,6 +14,14 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddFeatures();
 builder.Services.AddApiDocumentation();
+
+// Enums (e.g. IntegrationType/IntegrationStatus on IntegrationResponse) go
+// over the wire as their string names ("VersionControl"), not raw ints —
+// friendlier for API consumers and Swagger docs.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 var app = builder.Build();
 
@@ -55,8 +65,8 @@ app.UseAuthorization();
 app.MapAuthEndpoints();
 app.MapDashboardEndpoints();
 app.MapTeamEndpoints();
+app.MapIntegrationEndpoints();
 // app.MapProjectEndpoints();
-// app.MapIntegrationEndpoints();
 // app.MapUserEndpoints();
 
 app.Run();

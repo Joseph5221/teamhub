@@ -12,7 +12,7 @@ Modules/
 ├── Dashboard/     - User dashboard with integration TODO items
 ├── Teams/         - Team creation & membership (owner/member roles)
 ├── Projects/      - Team-scoped, integration-aggregating project records (TODO) — see ADR 0006
-├── Integrations/  - Third-party integrations (TODO)
+├── Integrations/  - Third-party integrations; GitHub connector implemented, see Modules/Integrations/README.md
 └── Users/         - User profile data, split from Auth per ADR 0005 (TODO)
 ```
 
@@ -127,9 +127,15 @@ spread across them. Reset to a clean slate without restarting the process:
   - Add an existing user by email / remove a member (owner only)
   - Two roles: owner (`Team.OwnerId`) and member (`Team.Members`, includes the owner)
 
+- **Integrations Feature** (see `Modules/Integrations/README.md` for full detail)
+  - `IModuleConnector` — shared connector contract every integration submodule implements
+  - CRUD for a team's configured integrations, owner manages config / any member can view + trigger data/action calls
+  - **GitHub connector implemented** (`Modules/Integrations/GitHub/`): lists an org's repos via the real GitHub REST API, personal-access-token auth (optional — unauthenticated works for public orgs), Polly retry + circuit-breaker around the HTTP calls
+  - Jira/Slack/Calendar types are accepted by the CRUD endpoints but have no connector yet — data/action calls on them return `501 Integration.NotSupported` until one is built (copy the GitHub pattern)
+
 ### 🚧 Coming Soon (Placeholders Ready)
 - Projects CRUD — team-scoped, meant to aggregate integration data once connectors exist (see [ADR 0006](../../docs/adr/0006-projects-definition.md))
-- Integrations management
+- Jira/Slack/Calendar connectors — copy the GitHub connector's shape (see `Modules/Integrations/GitHub/README.md`)
 - User management — profile data split from Auth (see [ADR 0005](../../docs/adr/0005-auth-users-boundary.md))
 
 ## 🗄️ Database
@@ -140,7 +146,12 @@ Using EF Core's **in-memory provider**, deliberately, for now — see
 - Data resets on restart, and reseeds automatically (Development only)
 - Pre-seeded with 3 users, 2 teams, 3 projects, 4 integrations — see
   `Infrastructure/Data/DbInitializer.cs`; reset it on demand with
-  `./scripts/seed-db.sh` without restarting the process
+  `./scripts/seed-db.sh` without restarting the process. The Growth team's
+  GitHub integration is pre-configured with a real public org
+  (`{"organization":"octokit"}`, no token) so its
+  `GET /api/teams/{teamId}/integrations/{integrationId}/data` endpoint
+  returns real sample repo data immediately — useful for frontend widget
+  work without minting a personal access token first.
 - No migrations exist yet; `scripts/reset-db.sh` explains why there's
   nothing to migrate today (that's separate from seeding — it's about
   schema, not test data)
@@ -161,6 +172,15 @@ Using EF Core's **in-memory provider**, deliberately, for now — see
 - `GET /api/teams/{teamId}/members` - List members (members only)
 - `POST /api/teams/{teamId}/members` - Add an existing user by email (owner only)
 - `DELETE /api/teams/{teamId}/members/{memberUserId}` - Remove a member (owner only)
+
+### Integrations (all require auth; see `Modules/Integrations/README.md`)
+- `POST /api/teams/{teamId}/integrations` - Configure a new integration (owner only)
+- `GET /api/teams/{teamId}/integrations` - List a team's integrations (members only)
+- `GET /api/teams/{teamId}/integrations/{integrationId}` - Get integration details (members only)
+- `PUT /api/teams/{teamId}/integrations/{integrationId}` - Update settings/configuration (owner only)
+- `DELETE /api/teams/{teamId}/integrations/{integrationId}` - Remove an integration (owner only)
+- `GET /api/teams/{teamId}/integrations/{integrationId}/data?since=` - Fetch normalized data from the connector (members only; `501` if no connector exists for that type yet)
+- `POST /api/teams/{teamId}/integrations/{integrationId}/actions` - Invoke a connector action, e.g. `{"action":"sync"}` (members only)
 
 ### Dev-only (Development environment only, not authenticated)
 - `POST /api/dev/reseed` - Clear and reseed the in-memory database with test data
@@ -187,7 +207,8 @@ TeamHub.Server/
 │   ├── Teams/            # Team management (owner/member roles)
 │   ├── Users/            # User profile data (TODO, see ADR 0005)
 │   ├── Projects/         # Team-scoped project records (TODO, see ADR 0006)
-│   └── Integrations/     # Third-party integrations (TODO)
+│   └── Integrations/     # Third-party integrations — GitHub connector implemented
+│       └── GitHub/       # GitHub REST API connector (Polly retry/circuit-breaker)
 ├── Domain/               # Domain models
 │   ├── Entities/         # Database entities
 │   ├── Common/           # Shared domain logic
@@ -205,7 +226,7 @@ TeamHub.Server/
 ### Phase 1: Build More Features
 1. ~~Create Teams feature~~ — done, see `Modules/Teams/README.md`
 2. Create Projects feature
-3. Create Integrations feature
+3. ~~Create Integrations feature~~ — done (GitHub connector), see `Modules/Integrations/README.md`
 4. Create Users feature
 
 ### Phase 2: Enhance Auth
@@ -215,9 +236,9 @@ TeamHub.Server/
 4. Add email verification
 
 ### Phase 3: Add Real Integrations
-1. GitHub API integration
-2. Jira API integration
-3. Slack webhook integration
+1. ~~GitHub API integration~~ — done, see `Modules/Integrations/GitHub/README.md`
+2. Jira API integration — copy the GitHub connector's shape
+3. Slack webhook integration — copy the GitHub connector's shape
 
 ## 💡 Development Tips
 
@@ -237,7 +258,20 @@ TeamHub.Server/
 tested implementation of the pattern above — copy its shape
 (`TeamDtos.cs`/`ITeamService.cs`/`TeamService.cs`/`TeamEndpoints.cs`, the
 `Result<T>`/`Error` pattern, `ClaimsPrincipal` → JWT `sub` claim for the
-current user) when building `Projects`, `Integrations`, or `Users` next.
+current user) when building `Projects` or `Users` next.
+
+### Example: `Modules/Integrations/GitHub` as the reference connector
+
+When building the next connector (Jira, Slack, Calendar), copy
+`Modules/Integrations/GitHub/`'s shape: an `I<X>ApiClient`/`<X>ApiClient`
+typed HTTP client wrapping the third-party REST API (registered with Polly
+retry/circuit-breaker in `ServiceCollectionExtensions.AddFeatures`), a
+`<X>Connector : IModuleConnector` that loads per-team config from
+`Integration.ConfigurationData` and translates API/config errors into
+`ModuleConnectorException`, and DTOs matching the external API's JSON shape.
+`IntegrationService` picks up any `IModuleConnector` registered in DI
+automatically — no dispatch code to touch. See
+`Modules/Integrations/GitHub/README.md` for the full breakdown.
 
 ## 🔧 Configuration
 
