@@ -1,0 +1,123 @@
+@page "/dashboard"
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
+@using BlazorApp.Models
+@using BlazorApp.Services
+@inject DashboardApiClient DashboardApi
+@inject AuthState AuthState
+@inject NavigationManager Nav
+
+<PageTitle>Dashboard | TeamHub</PageTitle>
+
+@if (loading)
+{
+    <p class="text-muted p-4"><em>Loading...</em></p>
+}
+else if (errorMessage is not null)
+{
+    <div class="alert alert-danger m-4">@errorMessage</div>
+}
+else if (dashboard is not null)
+{
+    <div class="container-fluid p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-0">Welcome, @dashboard.User.Name</h1>
+                <p class="text-muted mb-0">@dashboard.User.Email &middot; @dashboard.User.Role</p>
+            </div>
+            <button class="btn btn-outline-secondary" @onclick="LogoutAsync">Sign Out</button>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold">@dashboard.Stats.TotalTeams</div>
+                    <div class="text-muted">Teams</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold">@dashboard.Stats.TotalProjects</div>
+                    <div class="text-muted">Projects</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold">@dashboard.Stats.TotalIntegrations</div>
+                    <div class="text-muted">Integrations</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card text-center p-3">
+                    <div class="fs-2 fw-bold">@dashboard.Stats.ConnectedIntegrations</div>
+                    <div class="text-muted">Connected</div>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="mb-3">Integrations</h3>
+
+        @if (dashboard.Integrations.Count == 0)
+        {
+            <p class="text-muted">No integrations configured yet.</p>
+        }
+        else
+        {
+            <div class="row">
+                @foreach (var integration in dashboard.Integrations)
+                {
+                    <div class="col-md-4 mb-3">
+                        <div class="card p-3 h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <h5 class="mb-0">@integration.Name</h5>
+                                <span class="badge @StatusBadgeClass(integration.Status)">@integration.Status</span>
+                            </div>
+                            <p class="text-muted small mb-1">@integration.Type</p>
+                            <p class="mb-0">@integration.Description</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private DashboardResponse? dashboard;
+    private string? errorMessage;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticated = await AuthState.InitializeAsync();
+        if (!authenticated)
+        {
+            Nav.NavigateTo("/login");
+            return;
+        }
+
+        var result = await DashboardApi.GetDashboardAsync(AuthState.Token!);
+        loading = false;
+
+        if (result.Success)
+        {
+            dashboard = result.Data;
+        }
+        else
+        {
+            errorMessage = result.ErrorMessage;
+        }
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthState.ClearAsync();
+        Nav.NavigateTo("/login");
+    }
+
+    private static string StatusBadgeClass(string status) => status switch
+    {
+        "Connected" => "bg-success",
+        "Error" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

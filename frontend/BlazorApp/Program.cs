@@ -1,10 +1,18 @@
 using BlazorApp.Components;
+using BlazorApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+var apiBaseUrl = builder.Configuration["Api:BaseUrl"]
+    ?? throw new InvalidOperationException("Api:BaseUrl is not configured.");
+
+builder.Services.AddHttpClient<AuthApiClient>(client => client.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddHttpClient<DashboardApiClient>(client => client.BaseAddress = new Uri(apiBaseUrl));
+builder.Services.AddScoped<AuthState>();
 
 var app = builder.Build();
 
