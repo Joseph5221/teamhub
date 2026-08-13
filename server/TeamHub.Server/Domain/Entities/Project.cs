@@ -1,3 +1,5 @@
+using TeamHub.Server.Domain.Enums;
+
 namespace TeamHub.Server.Domain.Entities;
 
 /// <summary>
@@ -9,17 +11,17 @@ public class Project : BaseEntity
     /// Name of the project
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Detailed description of the project
     /// </summary>
     public string Description { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Current status of the project
     /// </summary>
-    public string Status { get; set; } = "Active";
-    
+    public ProjectStatus Status { get; set; } = ProjectStatus.Planned;
+
     /// <summary>
     /// ID of the team this project belongs to
     /// </summary>

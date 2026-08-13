@@ -1,11 +1,18 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using FluentAssertions;
 using TeamHub.Server.Modules.Auth;
 
 public class AuthEndpointsIntegrationTests : IClassFixture<CustomWebApplicationFactory>
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     private readonly HttpClient _client;
 
     public AuthEndpointsIntegrationTests(CustomWebApplicationFactory factory)
@@ -29,9 +36,7 @@ public class AuthEndpointsIntegrationTests : IClassFixture<CustomWebApplicationF
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var responseContent = await response.Content.ReadAsStringAsync();
-        var authResponse = JsonSerializer.Deserialize<AuthResponse>(
-            responseContent, 
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var authResponse = JsonSerializer.Deserialize<AuthResponse>(responseContent, JsonOptions);
         
         authResponse.Should().NotBeNull();
         authResponse!.Token.Should().NotBeNullOrEmpty();

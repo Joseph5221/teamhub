@@ -6,7 +6,9 @@ using TeamHub.Server.Modules.Auth;
 using TeamHub.Server.Modules.Dashboard;
 using TeamHub.Server.Modules.Integrations;
 using TeamHub.Server.Modules.Integrations.GitHub;
+using TeamHub.Server.Modules.Projects;
 using TeamHub.Server.Modules.Teams;
+using TeamHub.Server.Modules.Users;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
 
@@ -100,6 +102,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IDashboardService, DashboardService>();
         services.AddScoped<ITeamService, TeamService>();
         services.AddScoped<IIntegrationService, IntegrationService>();
+        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<IProjectService, ProjectService>();
 
         // Integration connectors — each registers itself as an
         // IModuleConnector; IntegrationService picks the right one by
@@ -119,9 +123,6 @@ public static class ServiceCollectionExtensions
         })
         .AddPolicyHandler(GitHubResiliencePolicies.GetRetryPolicy())
         .AddPolicyHandler(GitHubResiliencePolicies.GetCircuitBreakerPolicy());
-
-        // TODO: Add more feature services as they're created
-        // services.AddScoped<IProjectService, ProjectService>();
 
         return services;
     }

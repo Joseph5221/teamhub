@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TeamHub.Server.Domain.Common;
 using TeamHub.Server.Domain.Entities;
+using TeamHub.Server.Domain.Enums;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
 
@@ -84,7 +85,7 @@ public class AuthService : IAuthService
             Email = request.Email,
             Name = request.Name,
             PasswordHash = _passwordHasher.HashPassword(request.Password),
-            Role = "User"
+            Role = UserRole.Member
         };
 
         _context.Users.Add(user);

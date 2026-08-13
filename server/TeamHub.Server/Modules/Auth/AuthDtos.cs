@@ -1,3 +1,5 @@
+using TeamHub.Server.Domain.Enums;
+
 namespace TeamHub.Server.Modules.Auth;
 
 /// <summary>
@@ -18,7 +20,7 @@ public record AuthResponse(
     string Email,
     string Name,
     string Token,
-    string Role
+    UserRole Role
 );
 
 /// <summary>

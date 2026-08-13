@@ -11,9 +11,9 @@ Modules/
 ├── Auth/          - Authentication & JWT tokens
 ├── Dashboard/     - User dashboard with integration TODO items
 ├── Teams/         - Team creation & membership (owner/member roles)
-├── Projects/      - Team-scoped, integration-aggregating project records (TODO) — see ADR 0006
+├── Projects/      - Team-scoped, integration-aggregating project records — see ADR 0006
 ├── Integrations/  - Third-party integrations; GitHub connector implemented, see Modules/Integrations/README.md
-└── Users/         - User profile data, split from Auth per ADR 0005 (TODO)
+└── Users/         - User profile data & system-wide role assignment, split from Auth per ADR 0005
 ```
 
 ## 🚀 Getting Started
@@ -133,10 +133,19 @@ spread across them. Reset to a clean slate without restarting the process:
   - **GitHub connector implemented** (`Modules/Integrations/GitHub/`): lists an org's repos via the real GitHub REST API, personal-access-token auth (optional — unauthenticated works for public orgs), Polly retry + circuit-breaker around the HTTP calls
   - Jira/Slack/Calendar types are accepted by the CRUD endpoints but have no connector yet — data/action calls on them return `501 Integration.NotSupported` until one is built (copy the GitHub pattern)
 
+- **Projects Feature** (see `Modules/Projects/README.md` for full detail)
+  - Team-scoped project CRUD — create/list/get/update/delete, same owner-manages/member-views permission shape as Teams/Integrations
+  - `Project.Status` is a real enum (`ProjectStatus`) — Planned/Active/OnHold/Completed/Cancelled
+  - Integration-data linking still not decided (see [ADR 0006](../../docs/adr/0006-projects-definition.md)) — left for whoever attaches the first real integration's data to a project
+
+- **Users Feature** (see `Modules/Users/README.md` for full detail)
+  - `GET/PUT /api/users/me` — view/update the caller's own profile (display name, avatar URL)
+  - `GET /api/users/{userId}` — view any user's public profile (basic directory, already-visible data via team member lists)
+  - `PUT /api/users/{userId}/role` — assign a user's system-wide role (`UserRole`: Member/Admin), admin only
+  - Avatar is a URL field the user supplies — no file upload/blob storage yet
+
 ### 🚧 Coming Soon (Placeholders Ready)
-- Projects CRUD — team-scoped, meant to aggregate integration data once connectors exist (see [ADR 0006](../../docs/adr/0006-projects-definition.md))
 - Jira/Slack/Calendar connectors — copy the GitHub connector's shape (see `Modules/Integrations/GitHub/README.md`)
-- User management — profile data split from Auth (see [ADR 0005](../../docs/adr/0005-auth-users-boundary.md))
 
 ## 🗄️ Database
 
@@ -182,6 +191,19 @@ Using EF Core's **in-memory provider**, deliberately, for now — see
 - `GET /api/teams/{teamId}/integrations/{integrationId}/data?since=` - Fetch normalized data from the connector (members only; `501` if no connector exists for that type yet)
 - `POST /api/teams/{teamId}/integrations/{integrationId}/actions` - Invoke a connector action, e.g. `{"action":"sync"}` (members only)
 
+### Projects (all require auth; see `Modules/Projects/README.md`)
+- `POST /api/teams/{teamId}/projects` - Create a project (owner only)
+- `GET /api/teams/{teamId}/projects` - List a team's projects (members only)
+- `GET /api/teams/{teamId}/projects/{projectId}` - Get project details (members only)
+- `PUT /api/teams/{teamId}/projects/{projectId}` - Update a project (owner only)
+- `DELETE /api/teams/{teamId}/projects/{projectId}` - Remove a project (owner only)
+
+### Users (all require auth; see `Modules/Users/README.md`)
+- `GET /api/users/me` - Get the caller's own profile
+- `PUT /api/users/me` - Update the caller's own profile (display name, avatar URL)
+- `GET /api/users/{userId}` - Get a user's public profile
+- `PUT /api/users/{userId}/role` - Assign a user's system-wide role (admin only)
+
 ### Dev-only (Development environment only, not authenticated)
 - `POST /api/dev/reseed` - Clear and reseed the in-memory database with test data
 
@@ -205,8 +227,8 @@ TeamHub.Server/
 │   ├── Auth/             # Authentication
 │   ├── Dashboard/        # Dashboard
 │   ├── Teams/            # Team management (owner/member roles)
-│   ├── Users/            # User profile data (TODO, see ADR 0005)
-│   ├── Projects/         # Team-scoped project records (TODO, see ADR 0006)
+│   ├── Users/            # User profile data & role assignment (see ADR 0005)
+│   ├── Projects/         # Team-scoped project records (see ADR 0006)
 │   └── Integrations/     # Third-party integrations — GitHub connector implemented
 │       └── GitHub/       # GitHub REST API connector (Polly retry/circuit-breaker)
 ├── Domain/               # Domain models
@@ -225,9 +247,9 @@ TeamHub.Server/
 
 ### Phase 1: Build More Features
 1. ~~Create Teams feature~~ — done, see `Modules/Teams/README.md`
-2. Create Projects feature
+2. ~~Create Projects feature~~ — done, see `Modules/Projects/README.md`
 3. ~~Create Integrations feature~~ — done (GitHub connector), see `Modules/Integrations/README.md`
-4. Create Users feature
+4. ~~Create Users feature~~ — done, see `Modules/Users/README.md`
 
 ### Phase 2: Enhance Auth
 1. ~~Add password hashing~~ — done, see `Infrastructure/Security/PasswordHasher.cs`

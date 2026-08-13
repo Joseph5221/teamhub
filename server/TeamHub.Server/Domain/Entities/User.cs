@@ -1,3 +1,5 @@
+using TeamHub.Server.Domain.Enums;
+
 namespace TeamHub.Server.Domain.Entities;
 
 /// <summary>
@@ -9,22 +11,29 @@ public class User : BaseEntity
     /// User's email address (used for login)
     /// </summary>
     public string Email { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// User's display name
     /// </summary>
     public string Name { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Hashed password (will be used later for real auth)
     /// </summary>
     public string PasswordHash { get; set; } = string.Empty;
-    
+
     /// <summary>
-    /// User's role in the system
+    /// User's system-wide role (not team-specific — see Team.OwnerId/Members
+    /// for team-scoped roles). Owned by the Users module.
     /// </summary>
-    public string Role { get; set; } = "User";
-    
+    public UserRole Role { get; set; } = UserRole.Member;
+
+    /// <summary>
+    /// URL to the user's avatar image. Owned by the Users module; no file
+    /// upload/blob storage yet, just a link the user supplies.
+    /// </summary>
+    public string? AvatarUrl { get; set; }
+
     /// <summary>
     /// Whether the user account is active
     /// </summary>

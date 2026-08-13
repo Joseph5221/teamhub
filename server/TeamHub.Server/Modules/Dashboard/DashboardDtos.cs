@@ -1,3 +1,5 @@
+using TeamHub.Server.Domain.Enums;
+
 namespace TeamHub.Server.Modules.Dashboard;
 
 /// <summary>
@@ -16,7 +18,7 @@ public record UserInfo(
     Guid Id,
     string Name,
     string Email,
-    string Role
+    UserRole Role
 );
 
 /// <summary>

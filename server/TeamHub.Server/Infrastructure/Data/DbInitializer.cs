@@ -33,21 +33,22 @@ public static class DbInitializer
             Email = "test@teamhub.com",
             Name = "Test User",
             PasswordHash = seededPasswordHash,
-            Role = "Admin"
+            Role = UserRole.Admin,
+            AvatarUrl = "https://api.dicebear.com/9.x/identicon/svg?seed=alice"
         };
         var bob = new User
         {
             Email = "bob@teamhub.com",
             Name = "Bob Builder",
             PasswordHash = seededPasswordHash,
-            Role = "User"
+            Role = UserRole.Member
         };
         var carol = new User
         {
             Email = "carol@teamhub.com",
             Name = "Carol Danvers",
             PasswordHash = seededPasswordHash,
-            Role = "User"
+            Role = UserRole.Member
         };
         context.Users.AddRange(alice, bob, carol);
 
@@ -72,7 +73,7 @@ public static class DbInitializer
             {
                 Name = "Dashboard Revamp",
                 Description = "Rebuild the team dashboard UI",
-                Status = "Active",
+                Status = ProjectStatus.Active,
                 Team = platformTeam,
                 StartDate = DateTime.UtcNow.AddDays(-30)
             },
@@ -80,7 +81,7 @@ public static class DbInitializer
             {
                 Name = "Auth Hardening",
                 Description = "Replace dev-only auth with real hashing/refresh tokens",
-                Status = "Active",
+                Status = ProjectStatus.Active,
                 Team = platformTeam,
                 StartDate = DateTime.UtcNow.AddDays(-10)
             },
@@ -88,7 +89,7 @@ public static class DbInitializer
             {
                 Name = "Jira Sync",
                 Description = "Pull issues from Jira into TeamHub",
-                Status = "Planned",
+                Status = ProjectStatus.Planned,
                 Team = growthTeam
             }
         );

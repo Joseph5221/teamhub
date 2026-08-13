@@ -1,15 +1,50 @@
 # TeamHub — Status & Roadmap
 
-Last reviewed: 2026-08-08. Update the "Current Status" section whenever you
+Last reviewed: 2026-08-12. Update the "Current Status" section whenever you
 pick this project back up or wrap a session — it's meant to answer "where
 did I leave off?" in under a minute.
 
 ## Current Status
 
-The environment is reconciled, Auth/Dashboard are verified end-to-end, Teams
-is implemented and verified end-to-end, and the Integrations module (with a
-real GitHub connector) is now implemented and verified end-to-end too.
+The environment is reconciled, Auth/Dashboard are verified end-to-end,
+Teams/Integrations were implemented and verified end-to-end previously, and
+Users/Projects are now implemented too — every module in the original scope
+is built out.
 
+- ✅ **Users and Projects implemented (2026-08-12)**: closes out the last
+  `❌` item from the previous session. `Modules/Users`
+  (`IUserService`/`UserService`/`UserEndpoints`, see
+  `Modules/Users/README.md`) adds `GET/PUT /api/users/me` (self profile:
+  display name, avatar URL), `GET /api/users/{userId}` (any authenticated
+  user can view any profile — a basic directory, no more exposure than
+  team member lists already have), and `PUT /api/users/{userId}/role`
+  (admin only). `Modules/Projects` (`IProjectService`/`ProjectService`/
+  `ProjectEndpoints`, nested under `/api/teams/{teamId}/projects`, see
+  `Modules/Projects/README.md`) adds team-scoped project CRUD with the
+  same owner-manages/member-views permission shape as
+  `TeamService`/`IntegrationService`. Along the way, `User.Role` and
+  `Project.Status` — previously unchecked strings, with the matching
+  `UserRole`/`ProjectStatus` enum files sitting empty in
+  `Domain/Enums/` — were filled in and switched over, matching the
+  precedent already set by `IntegrationType`/`IntegrationStatus`
+  (unchecked strings → real enums, serialized API-wide as their string
+  names via `JsonStringEnumConverter`). `User.AvatarUrl` (nullable
+  `string`) is new on the `User` entity — a URL the user supplies, no file
+  upload/blob storage; that's a follow-up decision if it's ever needed.
+  `Project`↔`Integration` data linking (ADR 0006) is still not decided —
+  this session built the `Project` CRUD half only. Verified via
+  `dotnet test teamhub.sln` (65 unit + 18 integration tests, up from 43 +
+  7 — new `UserServiceTests`/`ProjectServiceTests` and
+  `UserEndpointsIntegrationTests`/`ProjectEndpointsIntegrationTests`, all
+  passing) and a live manual run (register → promote via seeded admin →
+  create team → create/list/update/delete project → get/update own
+  profile). One pre-existing-test regression was caught and fixed in the
+  same session: `TeamEndpointsIntegrationTests`/
+  `AuthEndpointsIntegrationTests`' local `JsonSerializerOptions` didn't
+  have a `JsonStringEnumConverter`, so they broke deserializing
+  `AuthResponse.Role` the moment `Role` became an enum instead of a plain
+  string — fixed by adding the converter, matching what `Program.cs`
+  already does server-side.
 - ✅ **Integrations implemented, GitHub connector proven out (2026-08-08)**:
   `IModuleConnector` (`Modules/Integrations/IModuleConnector.cs`) now exists
   in code, matching `docs/ARCHITECTURE.md`'s documented shape exactly

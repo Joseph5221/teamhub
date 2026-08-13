@@ -3,7 +3,9 @@ using TeamHub.Server.Extensions;
 using TeamHub.Server.Modules.Auth;
 using TeamHub.Server.Modules.Dashboard;
 using TeamHub.Server.Modules.Integrations;
+using TeamHub.Server.Modules.Projects;
 using TeamHub.Server.Modules.Teams;
+using TeamHub.Server.Modules.Users;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
 
@@ -66,8 +68,8 @@ app.MapAuthEndpoints();
 app.MapDashboardEndpoints();
 app.MapTeamEndpoints();
 app.MapIntegrationEndpoints();
-// app.MapProjectEndpoints();
-// app.MapUserEndpoints();
+app.MapProjectEndpoints();
+app.MapUserEndpoints();
 
 app.Run();
 
