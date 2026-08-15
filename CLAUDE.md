@@ -74,10 +74,29 @@ Full context lives in `docs/`:
 - **`docker-compose.yml` and `scripts/*.sh` now match the real repo layout**
   (`server/TeamHub.Server`, `frontend/BlazorApp`) — the old `./TeamHub.Server`
   / `./teamhub-frontend` Node/Vite paths are gone, a real server `Dockerfile`
-  was added, and there's a root `.env.example` for `JWT_SECRET`. Not
-  smoke-tested against a real `docker compose up --build` (no Docker daemon
-  available when this was fixed) — verify before trusting it fully. See
-  `docs/ARCHITECTURE.md` § "Reality check" for detail.
+  was added, and there's a root `.env.example` for `JWT_SECRET`. **Now
+  smoke-tested against a real Docker daemon (2026-08-12)** — `docker compose
+  up --build` brings up both containers and both actually serve traffic
+  (`register`/`login` exercised against the containerized API; the
+  containerized Blazor frontend returns 200). Two real bugs were found and
+  fixed in the process: the frontend `Dockerfile` `EXPOSE`d 5000 (a stale
+  leftover from the old Node/Vite frontend) while the `dotnet/aspnet:8.0`
+  base image actually listens on 8080 by default — same as `api`, which
+  already accounted for this — so the frontend was unreachable at its
+  mapped port; and host port 5000 collides with macOS ControlCenter
+  (AirPlay Receiver) regardless, so the frontend's host mapping is now
+  `5050:8080`. Also: root `.env` (not `.env.*`) wasn't actually covered by
+  `.gitignore` — fixed. See `docs/ARCHITECTURE.md` § "Reality check" for
+  detail.
+- **`Middleware/ExceptionHandlingMiddleware.cs` and
+  `Middleware/RequestLoggingMiddleware.cs` are implemented** (2026-08-12,
+  fixing the `ExceptionHnadlingMiddleware.cs` filename typo along the way).
+  Global exception handling returns the same `ProblemDetails` shape
+  `AuthEndpoints` already uses for expected failures (masking exception
+  details outside Development); request logging emits one
+  method/path/status/elapsed-ms line per request via `ILogger`. Both are
+  wired into `Program.cs` ahead of `UseAuthentication`/`UseAuthorization`,
+  verified working against the live Docker containers above.
 - Before claiming any server-side task "done," run `dotnet build teamhub.sln`
   and confirm 0 errors. Run `dotnet test teamhub.sln` too — it now actually
   works, so there's no excuse to skip it.
@@ -98,7 +117,7 @@ Full detail: `docs/ARCHITECTURE.md` § "Reality check" and `docs/ROADMAP.md`
 
 ```
 teamhub.sln                    Root solution, the only one — BlazorApp + Shared + TeamHub.Server + both test projects (builds clean)
-docker-compose.yml              Matches this repo's layout now (server/TeamHub.Server, frontend/BlazorApp) — not smoke-tested against a real Docker daemon, see Current State
+docker-compose.yml              Matches this repo's layout now (server/TeamHub.Server, frontend/BlazorApp) — smoke-tested against a real Docker daemon, see Current State
 scripts/                        setup-dev.sh (one-command setup) / start-dev.sh / run-tests.sh / seed-db.sh (reset test data) / reset-db.sh (migration no-op while DB is in-memory)
 docs/                          Planning & architecture docs (see above)
 frontend/BlazorApp/            Blazor Server frontend
@@ -112,7 +131,7 @@ server/TeamHub.Server/         ASP.NET Core backend — feature-folder modules:
   Domain/                        entities, enums, Result<T>/Error pattern — implemented
   Infrastructure/                EF Core DbContext (in-memory), entity configs (now filled in), DbInitializer (dev seed data), JWT token service — implemented; security/email helpers still stub
   Extensions/                    ServiceCollectionExtensions (wired up, incl. AddApiDocumentation) — WebApplicationExtensions (unused dead code) removed
-  Middleware/                    exception/logging middleware (stub, unused)
+  Middleware/                    exception handling + request logging — implemented
 server/TeamHub.Server.Tests/            unit tests — builds and passes
 server/TeamHub.Server.IntegrationTests/ integration tests — builds and passes
 ```

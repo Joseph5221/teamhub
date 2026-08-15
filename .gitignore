@@ -75,6 +75,7 @@ frontend/.next/
 docker-compose.override.yml
 .docker/
 *.env.local
+.env
 .env.*
 !.env.example
 

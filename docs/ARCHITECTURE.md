@@ -196,9 +196,19 @@ Differences from the planned architecture doc:
     Blazor Server, not Node) — is gone. `scripts/start-dev.sh`,
     `scripts/run-tests.sh`, and `scripts/reset-db.sh` were updated to match;
     `reset-db.sh` is now a no-op explainer since there's nothing to migrate
-    against an in-memory database. Not smoke-tested against a real `docker
-    compose up --build` (no Docker daemon available in the session that made
-    these changes) — verify that before trusting it fully.
+    against an in-memory database. **Smoke-tested against a real Docker
+    daemon (2026-08-12)**: `docker compose up --build` builds and starts
+    both containers, and both were verified actually serving traffic
+    (`register`/`login` exercised against the containerized API; the
+    containerized frontend returns 200). Two bugs surfaced and were fixed:
+    the frontend `Dockerfile` `EXPOSE`d 5000, a stale leftover from the old
+    Node/Vite frontend, while the `dotnet/aspnet:8.0` base image actually
+    listens on 8080 by default (same as `api`, which already accounted for
+    this) — the frontend was unreachable at its mapped port until fixed;
+    and host port 5000 collides with macOS ControlCenter (AirPlay
+    Receiver), so the frontend's host-side mapping is now `5050:8080`
+    regardless of the internal-port fix. Also, root `.env` (as opposed to
+    `.env.*`) wasn't actually covered by `.gitignore` — fixed.
 11. **`docker-compose.yml` now only needs a `JWT_SECRET` env var**
     (`${JWT_SECRET}`) — `DB_PASSWORD` was removed along with the Postgres
     `db` service (see item 8). A root `.env.example` is checked in covering

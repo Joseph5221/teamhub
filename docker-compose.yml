@@ -1,5 +1,3 @@
-version: '3.9'
-
 # Database is intentionally not included here: TeamHub.Server uses EF Core's
 # in-memory provider for now (see docs/adr/0002-in-memory-database-for-now.md).
 # Add a `db` service back when the app actually points at Postgres.
@@ -22,6 +20,12 @@ services:
       context: ./frontend/BlazorApp
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      # Container listens on 8080 (the dotnet/aspnet:8.0 base image's
+      # default ASPNETCORE_HTTP_PORTS, same as the api service below) —
+      # not 5000, which was a stale leftover from this project's old
+      # Node/Vite frontend. Host port 5000 also collides with macOS's
+      # ControlCenter (AirPlay Receiver), which binds it by default on
+      # every Mac, so the host side is remapped to 5050 regardless.
+      - "5050:8080"
     depends_on:
       - api

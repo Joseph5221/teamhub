@@ -11,6 +11,28 @@ Teams/Integrations were implemented and verified end-to-end previously, and
 Users/Projects are now implemented too — every module in the original scope
 is built out.
 
+- ✅ **`docker compose up --build` smoke-tested against a real Docker daemon,
+  and `Middleware/` filled in (2026-08-12)**: closes out next-step item 8
+  below. Both containers build and actually serve traffic — `register`/
+  `login` exercised against the containerized API (port 5001), the
+  containerized Blazor frontend returns 200 (port 5050). Two real bugs
+  found and fixed: the frontend `Dockerfile` `EXPOSE`d 5000 (a stale
+  Node/Vite leftover) while the `dotnet/aspnet:8.0` base image actually
+  listens on 8080 by default, same as `api` — the frontend was unreachable
+  at its mapped port until fixed; and port 5000 also collides with macOS
+  ControlCenter (AirPlay Receiver), so `frontend`'s host mapping is now
+  `5050:8080`. Also fixed: root `.env` wasn't covered by `.gitignore`
+  (only `.env.*` was). Separately, `Middleware/RequestLoggingMiddleware.cs`
+  and `Middleware/ExceptionHnadlingMiddleware.cs` (typo fixed on rename)
+  were empty, unreferenced stubs — rather than remove them like the
+  precedent `WebApplicationExtensions` dead code, they were implemented:
+  `ExceptionHandlingMiddleware` catches unhandled exceptions and returns
+  the same `ProblemDetails` shape `AuthEndpoints` already uses for expected
+  failures (masking exception detail outside Development);
+  `RequestLoggingMiddleware` logs one method/path/status/elapsed-ms line
+  per request via `ILogger`. Both wired into `Program.cs` ahead of
+  `UseAuthentication`, verified via the live Docker run above. See
+  `docs/ARCHITECTURE.md` § "Reality check" item 10 for full detail.
 - ✅ **Users and Projects implemented (2026-08-12)**: closes out the last
   `❌` item from the previous session. `Modules/Users`
   (`IUserService`/`UserService`/`UserEndpoints`, see
@@ -167,9 +189,8 @@ is built out.
   `teamhub-frontend` Node/Vite service is gone (Blazor Server was always the
   real frontend). Added the missing server `Dockerfile` (mirrors
   `frontend/BlazorApp/Dockerfile`) and a root `.env.example` for
-  `JWT_SECRET`. Not smoke-tested against a real `docker compose up --build`
-  in this session (no Docker daemon available) — do that before trusting it
-  fully.
+  `JWT_SECRET`. Since smoke-tested against a real Docker daemon — see the
+  2026-08-12 entry above.
 - ✅ **Dead code removed**: the leftover `/weatherforecast` endpoint in
   `Program.cs`, and `WebApplicationExtensions` (`InitializeDatabaseAsync`/
   `UseApiMiddleware`, unused duplicates of what `Program.cs` already did
@@ -255,7 +276,7 @@ making Auth trustworthy, then resuming feature work.
 5. ~~Implement Teams~~ (create team, add/remove/invite members, list members, owner/member permission checks) — done (2026-08-08), see Current Status above.
 6. ~~Pick one integration to prove out the pattern~~ — done (2026-08-08): GitHub connector built and verified end-to-end, see Current Status above. `IModuleConnector`'s shape is validated; **not yet done**: attaching its data to a `Project` per [ADR 0006](adr/0006-projects-definition.md) — `Projects` is still a stub, so this is blocked on building that module first.
 7. **Copy the GitHub pattern to Jira and Slack** (Calendar after). Do these one at a time, not in parallel — GitHub was step 6 specifically so the shape gets validated once before multiplying it. For each: new `Modules/Integrations/<Name>/` folder (`I<Name>ApiClient`/`<Name>ApiClient`/`<Name>Connector`/DTOs, copy `GitHub/`'s shape), register the typed HTTP client with Polly + the connector as `IModuleConnector` in `ServiceCollectionExtensions.AddFeatures` (copy the GitHub block) — `IntegrationService`/`IntegrationEndpoints` pick it up automatically, no other code to touch. See `server/TeamHub.Server/Modules/Integrations/README.md` § "Adding the next connector".
-8. **Smoke-test `docker compose up --build`** against the reconciled paths above on a machine with Docker running — this session fixed the paths and added the server `Dockerfile` but couldn't verify the full build (no Docker daemon available here).
+8. ~~Smoke-test `docker compose up --build`~~ — done (2026-08-12), see Current Status above.
 
 ## Not Yet — Deliberately Deferred
 

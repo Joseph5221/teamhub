@@ -8,6 +8,7 @@ using TeamHub.Server.Modules.Teams;
 using TeamHub.Server.Modules.Users;
 using TeamHub.Server.Infrastructure.Data;
 using TeamHub.Server.Infrastructure.Security;
+using TeamHub.Server.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,6 +59,9 @@ if (app.Environment.IsDevelopment())
     .WithTags("Dev")
     .WithOpenApi();
 }
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
